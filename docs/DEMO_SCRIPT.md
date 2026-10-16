@@ -139,4 +139,4 @@ This demo walks through a realistic daily operational cycle of an Indian retail 
 - **No Fluff:** Solves the real, daily problems of a busy Indian retailer.
 - **Financial Precision:** 100% integer arithmetic in paise — never floating point.
 - **True Mother-Tongue Accessibility:** Seamlessly operates in 22 Indian languages with RTL layout.
-- **Rock-Solid Reliability:** Powered by SQLite transactions and validated by 119 automated tests.
+- **Rock-Solid Reliability:** Powered by SQLite transactions and validated by 122 automated unit/integration tests plus 2 isolated E2E scenario suites.
