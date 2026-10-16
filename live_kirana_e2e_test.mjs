@@ -1,11 +1,11 @@
 const API = 'http://127.0.0.1:8000/api';
 
 async function testKirana() {
-  console.log('--- 1. Health & Schema Version 3 Check ---');
+  console.log('--- 1. Health & Schema Version 4 Check ---');
   const hRes = await fetch(`${API}/health/ready`);
   const health = await hRes.json();
   console.log('Ready check:', health.status, 'Schema version:', health.schema_version);
-  if (health.schema_version !== 3) throw new Error('Schema version should be 3');
+  if (health.schema_version !== 4) throw new Error(`Schema version should be 4, got: ${health.schema_version}`);
 
   console.log('--- 2. Quick Product Entry (Optional SKU & 0 Purchase Price) ---');
   const pRes = await fetch(`${API}/products`, {
@@ -107,7 +107,40 @@ async function testKirana() {
     throw new Error('Reorder draft must be a purchase draft');
   }
 
-  console.log('\n>>> ALL LIVE KIRANA E2E VERIFICATIONS PASSED SUCCESSFULLY! <<<');
+  console.log('--- 8. Customer Balance Statement & WhatsApp Summary ---');
+  const stmtRes = await fetch(`${API}/customers/${customer.id}/statement`);
+  const stmt = await stmtRes.json();
+  console.log('Customer Statement Closing Balance:', stmt.closing_balance, 'paise (expected: 3000)');
+  console.log('Entries count:', stmt.entries.length, 'Total Debit:', stmt.total_debit, 'Total Credit:', stmt.total_credit);
+  console.log('WhatsApp shareable preview:\n' + stmt.shareable_text.substring(0, 100) + '...');
+  if (stmt.closing_balance !== 3000) throw new Error('Statement closing balance should be 3000 paise');
+
+  console.log('--- 9. Record Shop Expense & Category Summary ---');
+  const expRes = await fetch(`${API}/expenses`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      amount: 1500, // Rs 15.00
+      category: 'miscellaneous',
+      payment_method: 'cash',
+      notes: 'Evening tea for guests'
+    })
+  });
+  const expense = await expRes.json();
+  console.log('Created expense ID:', expense.id, 'Amount:', expense.amount, 'Category:', expense.category);
+  if (expense.amount !== 1500) throw new Error('Expense amount should be 1500 paise');
+
+  console.log('--- 10. Daily Cash Closing Preview & Reconciliation ---');
+  const todayIso = new Date().toISOString().split('T')[0];
+  const previewRes = await fetch(`${API}/cash-closing/preview?date=${todayIso}`);
+  const preview = await previewRes.json();
+  console.log('Cash Closing Preview - Date:', preview.business_date);
+  console.log('Opening Cash:', preview.opening_cash, 'Cash Sales:', preview.cash_sales);
+  console.log('Cash Repayments:', preview.cash_repayments, 'Cash Expenses:', preview.cash_expenses);
+  console.log('Expected Cash:', preview.expected_cash, 'paise');
+  if (typeof preview.expected_cash !== 'number') throw new Error('Expected cash must be a number');
+
+  console.log('\n>>> ALL LIVE KIRANA V1.0 E2E VERIFICATIONS PASSED SUCCESSFULLY! <<<');
 }
 
 testKirana().catch((err) => {
