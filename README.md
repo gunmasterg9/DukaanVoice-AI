@@ -221,6 +221,7 @@ DukaanVoice AI/
 │   └── e2e_verification.py     # Standalone Python E2E lifecycle test on isolated database
 ├── live_kirana_e2e_test.mjs    # Strengthened Node.js Kirana E2E integration test
 ├── docs/
+│   ├── SUBMISSION_DEMO_GUIDE.md # Official submission guide & evaluator demo protocol
 │   ├── FINAL_QA_REPORT.md      # Comprehensive QA audit, metrics, and sign-off
 │   ├── RELEASE_NOTES.md        # Feature highlights and release details
 │   ├── KNOWN_LIMITATIONS.md    # Transparent documentation of operational limits
@@ -245,6 +246,7 @@ DukaanVoice AI/
 ---
 
 ## 📜 Documentation Links
+- [Submission & Demo Guide](docs/SUBMISSION_DEMO_GUIDE.md)
 - [Final QA Report](docs/FINAL_QA_REPORT.md)
 - [Release Notes](docs/RELEASE_NOTES.md)
 - [Known Limitations](docs/KNOWN_LIMITATIONS.md)
