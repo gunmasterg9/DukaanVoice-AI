@@ -198,9 +198,9 @@ export function formatMovementType(type, t) {
     case 'purchase':
       return { tone: 'success', label: t ? t('transactions.type_purchase') : 'Purchase' }
     case 'adjustment':
-      return { tone: 'info', label: 'Adjustment' }
+      return { tone: 'info', label: t ? t('transactions.movement_adjustment') : 'Adjustment' }
     case 'reversal':
-      return { tone: 'warning', label: 'Reversal' }
+      return { tone: 'warning', label: t ? t('transactions.movement_reversal') : 'Reversal' }
     default:
       return { tone: 'secondary', label: type || 'Movement' }
   }

@@ -234,7 +234,7 @@ npm.cmd run dev
 cd "C:\Users\RAHUL\Desktop\gautam\DukaanVoice AI\backend"
 .\.venv\Scripts\python.exe -m pytest
 
-# Frontend automated test suite (41 tests)
+# Frontend automated test suite (48 tests)
 cd "C:\Users\RAHUL\Desktop\gautam\DukaanVoice AI\frontend"
 npm.cmd test
 

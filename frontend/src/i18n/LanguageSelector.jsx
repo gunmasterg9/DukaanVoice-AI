@@ -5,7 +5,10 @@ export function LanguageSelector() {
   const { locale, setLocale, config, locales } = useI18n()
   const [isOpen, setIsOpen] = useState(false)
   const [search, setSearch] = useState('')
+  const [highlightedIndex, setHighlightedIndex] = useState(0)
   const dropdownRef = useRef(null)
+  const searchInputRef = useRef(null)
+  const listRef = useRef(null)
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -34,67 +37,121 @@ export function LanguageSelector() {
     )
   })
 
+
+  // Scroll highlighted item into view
+  useEffect(() => {
+    if (isOpen && listRef.current) {
+      const items = listRef.current.querySelectorAll('.language-option-btn')
+      if (items[highlightedIndex]) {
+        items[highlightedIndex].scrollIntoView({ block: 'nearest' })
+      }
+    }
+  }, [highlightedIndex, isOpen])
+
   const handleSelect = (code) => {
     setLocale(code)
     setIsOpen(false)
     setSearch('')
   }
 
+  const handleKeyDown = (e) => {
+    if (!isOpen) {
+      if (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault()
+        setIsOpen(true)
+      }
+      return
+    }
+
+    if (e.key === 'Escape') {
+      e.preventDefault()
+      setIsOpen(false)
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      setHighlightedIndex((prev) => (prev + 1) % (filteredLocales.length || 1))
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      setHighlightedIndex((prev) => (prev - 1 + filteredLocales.length) % (filteredLocales.length || 1))
+    } else if (e.key === 'Enter') {
+      e.preventDefault()
+      if (filteredLocales[highlightedIndex]) {
+        handleSelect(filteredLocales[highlightedIndex].code)
+      }
+    }
+  }
+
   return (
-    <div className="language-selector-wrapper" ref={dropdownRef}>
+    <div className="language-selector-wrapper" ref={dropdownRef} onKeyDown={handleKeyDown}>
       <button
         type="button"
-        className="language-selector-btn"
+        className="language-selector-trigger"
         onClick={() => setIsOpen(!isOpen)}
         aria-expanded={isOpen}
         aria-haspopup="listbox"
         aria-label="Select interface language"
-        title="Change Language"
+        title="Change Language / ભાષા બદલો"
+        id="language-selector-button"
       >
-        <span className="lang-icon" aria-hidden="true">🌐</span>
-        <span className="lang-current-native">{config.nativeName}</span>
-        <span className="lang-current-code">({config.code.toUpperCase()})</span>
-        <span className="lang-caret" aria-hidden="true">{isOpen ? '▲' : '▼'}</span>
+        <span className="lang-globe" aria-hidden="true">🌐</span>
+        <span className="lang-name-active">{config.nativeName}</span>
+        <span className="lang-code-tag">({config.code.toUpperCase()})</span>
+        <span className={`lang-arrow ${isOpen ? 'open' : ''}`} aria-hidden="true">▼</span>
       </button>
 
       {isOpen && (
-        <div className="language-dropdown-menu" role="listbox">
-          <div className="lang-search-box">
+        <div
+          className="language-menu-dropdown"
+          role="listbox"
+          aria-labelledby="language-selector-button"
+        >
+          <div className="language-menu-search">
             <input
+              ref={searchInputRef}
               type="text"
-              className="lang-search-input"
+              className="language-search-input"
               placeholder="Search language / भाषा खोजें..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                setSearch(e.target.value)
+                setHighlightedIndex(0)
+              }}
               autoFocus
-              aria-label="Search languages"
+              aria-label="Search languages by name or code"
             />
           </div>
-          <div className="lang-options-list">
-            {filteredLocales.map((loc) => {
+          <div className="language-menu-list" ref={listRef}>
+            {filteredLocales.map((loc, idx) => {
               const isSelected = loc.code === locale
+              const isHighlighted = idx === highlightedIndex
               return (
                 <button
                   key={loc.code}
                   type="button"
-                  className={`lang-option-item ${isSelected ? 'selected' : ''}`}
+                  className={`language-option-btn ${isSelected ? 'active' : ''} ${isHighlighted ? 'highlighted' : ''}`}
                   role="option"
                   aria-selected={isSelected}
                   onClick={() => handleSelect(loc.code)}
+                  onMouseEnter={() => setHighlightedIndex(idx)}
                 >
-                  <div className="lang-option-text">
-                    <span className="lang-native-label">{loc.nativeName}</span>
-                    <span className="lang-english-label">{loc.name}</span>
+                  <div className="language-text-group">
+                    <span className="language-native-name">{loc.nativeName}</span>
+                    <span className="language-sub-label">
+                      {loc.name} {loc.region ? `• ${loc.region}` : ''}
+                    </span>
                   </div>
-                  <div className="lang-meta-tags">
-                    {loc.dir === 'rtl' && <span className="lang-rtl-tag">RTL</span>}
-                    <span className="lang-code-tag">{loc.code}</span>
+                  <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                    {loc.dir === 'rtl' && <span className="lang-rtl-badge">RTL</span>}
+                    <span className="lang-code-tag" style={{ fontSize: '0.72rem', opacity: 0.8 }}>
+                      {loc.code}
+                    </span>
                   </div>
                 </button>
               )
             })}
             {filteredLocales.length === 0 && (
-              <div className="lang-no-results">No languages found</div>
+              <div style={{ padding: '16px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                No languages found
+              </div>
             )}
           </div>
         </div>

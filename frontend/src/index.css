@@ -1502,7 +1502,8 @@ a:hover {
   text-align: right;
 }
 
-.language-option-btn:hover {
+.language-option-btn:hover,
+.language-option-btn.highlighted {
   background: var(--bg-card-hover);
 }
 
@@ -1684,6 +1685,113 @@ a:hover {
   gap: 6px;
 }
 
+.command-bar-header {
+  margin-bottom: var(--space-sm);
+}
+
+.command-bar-title-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-size: 0.8rem;
+}
+
+.command-bar-badge {
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgba(108, 71, 255, 0.25);
+  color: var(--color-primary-light);
+  border: 1px solid rgba(108, 71, 255, 0.4);
+}
+
+.command-bar-offline {
+  font-size: 0.72rem;
+  color: var(--color-success);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 500;
+}
+
+.command-bar-current-lang {
+  color: var(--text-muted);
+  font-size: 0.76rem;
+}
+
+.command-listening-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+  color: var(--color-danger);
+  margin-top: 8px;
+  font-weight: 600;
+}
+
+.pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-danger);
+  animation: pulseDot 1s infinite alternate;
+}
+
+@keyframes pulseDot {
+  0% { opacity: 0.3; transform: scale(0.8); }
+  100% { opacity: 1; transform: scale(1.2); }
+}
+
+.command-result-card {
+  margin-top: var(--space-md);
+  padding: var(--space-md);
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  animation: fadeIn 200ms ease-out;
+}
+
+.command-result-card.tone-success {
+  border-color: rgba(16, 185, 129, 0.5);
+  background: rgba(16, 185, 129, 0.08);
+}
+
+.command-result-card.tone-error {
+  border-color: rgba(239, 68, 68, 0.5);
+  background: rgba(239, 68, 68, 0.08);
+}
+
+.command-result-card.tone-warning,
+.command-result-card.tone-ambiguous {
+  border-color: rgba(245, 158, 11, 0.5);
+  background: rgba(245, 158, 11, 0.08);
+}
+
+.command-result-body {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-md);
+}
+
+.command-result-icon {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.command-result-content h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.command-result-sub {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
 /* ==========================================================================
    RTL (Right-to-Left) Script Support (Urdu, Kashmiri, Sindhi)
    ========================================================================== */
@@ -1726,6 +1834,31 @@ a:hover {
 }
 
 [dir="rtl"] .pagination-controls {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .command-bar-title-row {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .command-result-body {
+  flex-direction: row-reverse;
+  text-align: right;
+}
+
+[dir="rtl"] .command-guardrail-notice {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .status-card {
+  text-align: right;
+}
+
+[dir="rtl"] .report-tabs {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .date-filter-group {
   flex-direction: row-reverse;
 }
 

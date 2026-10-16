@@ -144,7 +144,7 @@ export function CommandBar({ onNavigate }) {
         <div className="command-input-wrapper">
           <input
             type="text"
-            className="command-bar-input"
+            className="command-text-input command-bar-input"
             placeholder={t('commandBar.placeholder')}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
