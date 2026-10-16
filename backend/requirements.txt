@@ -1,0 +1,12 @@
+# DukaanVoice AI — Phase 1 backend (pinned direct dependencies)
+# Install inside backend/.venv only. Do not install these globally.
+#
+# Constrained to versions available on the Phase 0 audit machine
+# (Python 3.12.10) and verified during this Phase 1 setup.
+
+fastapi==0.143.0
+uvicorn[standard]==0.54.0
+pydantic==2.14.1
+python-dotenv==1.1.1
+pytest==8.4.2
+httpx==0.28.1

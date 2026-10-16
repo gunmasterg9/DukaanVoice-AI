@@ -1,0 +1,64 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+*.egg
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Virtual environments
+backend/.venv/
+backend/venv/
+.venv/
+venv/
+
+# Environment variables and secrets
+.env
+backend/.env
+frontend/.env
+frontend/.env.local
+*.local
+
+# SQLite databases and sidecars (never commit shop data)
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+backend/data/*.db
+backend/backups/*
+
+# Keep directory placeholders
+!backend/data/.gitkeep
+!backend/backups/.gitkeep
+
+# Node.js
+node_modules/
+frontend/node_modules/
+
+# Vite build output
+frontend/dist/
+frontend/dist-ssr/
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+npm-debug.log*
+
+# Agents
+.agents/
