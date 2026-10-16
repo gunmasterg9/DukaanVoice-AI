@@ -110,7 +110,7 @@ def _fetch_transaction_items(
             "transaction_id": int(r["transaction_id"]),
             "product_id": int(r["product_id"]),
             "product_name": str(r["product_name"]),
-            "product_sku": str(r["product_sku"]),
+            "product_sku": str(r["product_sku"]) if r["product_sku"] is not None else None,
             "quantity": int(r["quantity"]),
             "unit": str(r["unit"]),
             "unit_price": int(r["unit_price"]),

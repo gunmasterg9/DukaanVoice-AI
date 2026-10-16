@@ -10,7 +10,7 @@ Stock and money conventions (documented in docs/DATABASE_SCHEMA.md):
 
 from __future__ import annotations
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 
 REQUIRED_TABLES = (
     "schema_migrations",
@@ -109,6 +109,44 @@ MIGRATION_001_STATEMENTS = (
     "CREATE INDEX idx_transaction_items_product ON transaction_items(product_id)",
     "CREATE INDEX idx_inventory_movements_product ON inventory_movements(product_id)",
     "CREATE INDEX idx_inventory_movements_transaction ON inventory_movements(transaction_id)",
+)
+
+MIGRATION_002_STATEMENTS = (
+    "DROP TABLE IF EXISTS products_v2",
+    """
+    CREATE TABLE products_v2 (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL CHECK (length(trim(name)) > 0),
+        sku TEXT CHECK (sku IS NULL OR length(trim(sku)) > 0),
+        category TEXT NOT NULL DEFAULT '',
+        stock_qty INTEGER NOT NULL DEFAULT 0 CHECK (stock_qty >= 0),
+        base_unit TEXT NOT NULL CHECK (length(trim(base_unit)) > 0),
+        purchase_price INTEGER NOT NULL DEFAULT 0 CHECK (purchase_price >= 0),
+        selling_price INTEGER NOT NULL DEFAULT 0 CHECK (selling_price >= 0),
+        low_stock_threshold INTEGER NOT NULL DEFAULT 0 CHECK (low_stock_threshold >= 0),
+        active INTEGER NOT NULL DEFAULT 1 CHECK (active IN (0, 1)),
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+        UNIQUE (sku)
+    )
+    """,
+    """
+    INSERT INTO products_v2 (
+        id, name, sku, category, stock_qty, base_unit,
+        purchase_price, selling_price, low_stock_threshold,
+        active, created_at, updated_at
+    )
+    SELECT
+        id, name, sku, category, stock_qty, base_unit,
+        purchase_price, selling_price, low_stock_threshold,
+        active, created_at, updated_at
+    FROM products
+    """,
+    "DROP TABLE products",
+    "ALTER TABLE products_v2 RENAME TO products",
+    "CREATE INDEX idx_products_sku ON products(sku)",
+    "CREATE INDEX idx_products_active ON products(active)",
+    "CREATE INDEX idx_products_category ON products(category)",
 )
 
 

@@ -41,7 +41,7 @@ class TransactionItemResponse(BaseModel):
     transaction_id: int
     product_id: int
     product_name: str
-    product_sku: str
+    product_sku: Optional[str] = None
     quantity: int
     unit: str
     unit_price: int

@@ -28,7 +28,7 @@ def test_schema_initialization_is_idempotent(tmp_db_path):
     conn = connect(tmp_db_path)
     try:
         count = conn.execute("SELECT COUNT(*) FROM schema_migrations").fetchone()[0]
-        assert count == 1
+        assert count == SCHEMA_VERSION
     finally:
         conn.close()
 

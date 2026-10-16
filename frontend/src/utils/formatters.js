@@ -37,10 +37,6 @@ export function validateProductForm(values) {
     errors.name = 'Product name is required.'
   }
 
-  if (!values.sku || !values.sku.trim()) {
-    errors.sku = 'SKU is required.'
-  }
-
   if (!values.base_unit || !values.base_unit.trim()) {
     errors.base_unit = 'Base unit is required.'
   }

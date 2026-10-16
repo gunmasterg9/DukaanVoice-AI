@@ -29,7 +29,7 @@ def _row_to_product(row: sqlite3.Row) -> dict[str, Any]:
     return {
         "id": int(row["id"]),
         "name": str(row["name"]),
-        "sku": str(row["sku"]),
+        "sku": str(row["sku"]) if row["sku"] is not None else None,
         "category": str(row["category"]),
         "stock_qty": stock_qty,
         "base_unit": str(row["base_unit"]),
@@ -65,16 +65,17 @@ def _row_to_conversion(row: sqlite3.Row) -> dict[str, Any]:
 def create_product(payload: ProductCreate) -> ProductResponse:
     """Create a new product with opening stock and initial inventory movement."""
     with connection() as conn:
-        # Check SKU uniqueness (case-insensitive)
-        conflict = conn.execute(
-            "SELECT id FROM products WHERE LOWER(sku) = LOWER(?)",
-            (payload.sku,),
-        ).fetchone()
-        if conflict:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail=f"A product with SKU '{payload.sku}' already exists.",
-            )
+        # Check SKU uniqueness (case-insensitive) if SKU is provided
+        if payload.sku is not None:
+            conflict = conn.execute(
+                "SELECT id FROM products WHERE LOWER(sku) = LOWER(?)",
+                (payload.sku,),
+            ).fetchone()
+            if conflict:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail=f"A product with SKU '{payload.sku}' already exists.",
+                )
 
         try:
             cursor = conn.execute(
@@ -140,7 +141,7 @@ def list_products(
 
     if query and query.strip():
         term = f"%{query.strip().lower()}%"
-        where_clauses.append("(LOWER(name) LIKE ? OR LOWER(sku) LIKE ?)")
+        where_clauses.append("(LOWER(name) LIKE ? OR (sku IS NOT NULL AND LOWER(sku) LIKE ?))")
         params.extend([term, term])
 
     if category and category.strip():
@@ -227,16 +228,17 @@ def update_product(product_id: int, payload: ProductUpdate) -> ProductResponse:
                 detail=f"Product {product_id} not found.",
             )
 
-        # Check SKU conflict with another product
-        conflict = conn.execute(
-            "SELECT id FROM products WHERE LOWER(sku) = LOWER(?) AND id <> ?",
-            (payload.sku, product_id),
-        ).fetchone()
-        if conflict:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail=f"A product with SKU '{payload.sku}' already exists.",
-            )
+        # Check SKU conflict with another product if SKU is provided
+        if payload.sku is not None:
+            conflict = conn.execute(
+                "SELECT id FROM products WHERE LOWER(sku) = LOWER(?) AND id <> ?",
+                (payload.sku, product_id),
+            ).fetchone()
+            if conflict:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail=f"A product with SKU '{payload.sku}' already exists.",
+                )
 
         try:
             conn.execute(

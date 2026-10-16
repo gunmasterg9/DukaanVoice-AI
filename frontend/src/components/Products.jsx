@@ -284,7 +284,7 @@ export function Products() {
                     <td>
                       <div className="product-title-cell">
                         <span className="product-name">{p.name}</span>
-                        <span className="product-sku">{p.sku}</span>
+                        <span className="product-sku">{p.sku || '—'}</span>
                       </div>
                     </td>
                     <td>
@@ -474,7 +474,7 @@ function ProductFormModal({ mode, product, onClose, onSuccess }) {
     if (isEdit) {
       const payload = {
         name: formData.name.trim(),
-        sku: formData.sku.trim(),
+        sku: formData.sku?.trim() ? formData.sku.trim() : null,
         category: formData.category.trim(),
         base_unit: formData.base_unit.trim(),
         purchase_price: rupeesToPaise(formData.purchase_price),
@@ -491,7 +491,7 @@ function ProductFormModal({ mode, product, onClose, onSuccess }) {
     } else {
       const payload = {
         name: formData.name.trim(),
-        sku: formData.sku.trim(),
+        sku: formData.sku?.trim() ? formData.sku.trim() : null,
         category: formData.category.trim(),
         base_unit: formData.base_unit.trim(),
         opening_stock: qtyToMilli(formData.opening_stock),
@@ -772,7 +772,7 @@ function ProductDetailModal({ productId, onClose, onEdit }) {
         <div className="modal-header">
           <div>
             <h3>{t('products.modal_detail_title')}</h3>
-            {detail && <span className="modal-subtitle">{detail.name} ({detail.sku})</span>}
+            {detail && <span className="modal-subtitle">{detail.name}{detail.sku ? ` (${detail.sku})` : ''}</span>}
           </div>
           <button type="button" className="close-btn" onClick={onClose}>
             ×
@@ -997,7 +997,7 @@ function DeactivateConfirmModal({ product, onClose, onConfirm }) {
         </div>
         <div className="modal-body">
           <p>
-            {t('products.deactivate_warning', { name: product.name, sku: product.sku })}
+            {t('products.deactivate_warning', { name: product.name, sku: product.sku || '—' })}
           </p>
         </div>
         <div className="modal-actions">

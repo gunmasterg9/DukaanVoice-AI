@@ -56,7 +56,7 @@ class PurchaseReport(BaseModel):
 class ProductSalesItem(BaseModel):
     product_id: int
     product_name: str
-    product_sku: str
+    product_sku: Optional[str] = None
     category: str
     base_unit: str
     quantity_sold: int = Field(..., description="Net quantity sold in milli-units of base_unit")
@@ -80,7 +80,7 @@ class ProductSalesReport(BaseModel):
 class InventorySummaryItem(BaseModel):
     product_id: int
     name: str
-    sku: str
+    sku: Optional[str] = None
     category: str
     stock_qty: int = Field(..., description="Current stock in milli-units of base_unit")
     base_unit: str
@@ -112,7 +112,7 @@ class InventorySummaryReport(BaseModel):
 class ReconciliationItem(BaseModel):
     product_id: int
     product_name: str
-    product_sku: str
+    product_sku: Optional[str] = None
     base_unit: str
     recorded_stock: int = Field(..., description="Stock in products table (milli-units)")
     calculated_stock: int = Field(..., description="Stock calculated from movement audit trail (milli-units)")
@@ -142,7 +142,7 @@ class MovementListItem(BaseModel):
     id: int
     product_id: int
     product_name: str
-    product_sku: str
+    product_sku: Optional[str] = None
     transaction_id: Optional[int]
     movement_type: str
     quantity_change: int = Field(..., description="Quantity delta in milli-units")

@@ -10,6 +10,7 @@ from pathlib import Path
 from app.config import Settings, get_settings
 from app.schema import (
     MIGRATION_001_STATEMENTS,
+    MIGRATION_002_STATEMENTS,
     REQUIRED_TABLES,
     SCHEMA_VERSION,
     SchemaError,
@@ -96,9 +97,30 @@ def initialize_schema(database_path: str | Path | None = None) -> dict[str, obje
                 conn.execute(statement)
             conn.execute(
                 "INSERT INTO schema_migrations (version, name) VALUES (?, ?)",
-                (SCHEMA_VERSION, "001_initial_foundation"),
+                (1, "001_initial_foundation"),
             )
-        elif int(version) < SCHEMA_VERSION:
+            version = 1
+
+        if int(version) == 1:
+            conn.commit()
+            conn.execute("PRAGMA foreign_keys = OFF")
+            try:
+                for statement in MIGRATION_002_STATEMENTS:
+                    conn.execute(statement)
+                conn.execute(
+                    "INSERT INTO schema_migrations (version, name) VALUES (?, ?)",
+                    (2, "002_optional_sku"),
+                )
+                conn.commit()
+            finally:
+                conn.execute("PRAGMA foreign_keys = ON")
+
+            fk_errors = conn.execute("PRAGMA foreign_key_check").fetchall()
+            if fk_errors:
+                raise SchemaError(f"Foreign key violations detected during migration: {fk_errors}")
+            version = 2
+
+        if int(version) < SCHEMA_VERSION:
             raise SchemaError(
                 "Database schema is older than this application. "
                 "Apply an explicit migration; tables will not be dropped."

@@ -167,7 +167,7 @@ export async function interpretCommand(rawCommand, options = {}) {
           candidateName &&
           (p.name.toLowerCase().includes(candidateName) ||
             candidateName.includes(p.name.toLowerCase()) ||
-            p.sku.toLowerCase().includes(candidateName))
+            (p.sku && p.sku.toLowerCase().includes(candidateName)))
       ) || allProds[0]
 
       if (!matched) {
@@ -301,7 +301,7 @@ export function parseNaturalCommand(rawCommand, availableProducts = []) {
         candidate &&
         (p.name.toLowerCase().includes(candidate) ||
           candidate.includes(p.name.toLowerCase()) ||
-          p.sku.toLowerCase().includes(candidate))
+          (p.sku && p.sku.toLowerCase().includes(candidate)))
     ) || availableProducts[0]
 
     return {
@@ -334,7 +334,7 @@ export function parseNaturalCommand(rawCommand, availableProducts = []) {
         candidate &&
         (p.name.toLowerCase().includes(candidate) ||
           candidate.includes(p.name.toLowerCase()) ||
-          p.sku.toLowerCase().includes(candidate))
+          (p.sku && p.sku.toLowerCase().includes(candidate)))
     ) || (availableProducts.length > 0 ? availableProducts[0] : null)
 
     return {

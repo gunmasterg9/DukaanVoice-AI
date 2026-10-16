@@ -61,7 +61,7 @@ describe('Validation Helpers', () => {
     assert.equal(Object.keys(result.errors).length, 0)
   })
 
-  it('rejects product form with missing required fields', () => {
+  it('rejects product form with missing required fields (name and base_unit, not sku)', () => {
     const invalid = {
       name: '  ',
       sku: '',
@@ -70,8 +70,29 @@ describe('Validation Helpers', () => {
     const result = validateProductForm(invalid)
     assert.equal(result.isValid, false)
     assert.ok(result.errors.name)
-    assert.ok(result.errors.sku)
+    assert.equal(result.errors.sku, undefined)
     assert.ok(result.errors.base_unit)
+  })
+
+  it('allows product form with empty or omitted SKU', () => {
+    const withoutSku = {
+      name: 'Local Rice',
+      sku: '',
+      base_unit: 'kg',
+      purchase_price: '50',
+      selling_price: '60',
+    }
+    const res1 = validateProductForm(withoutSku)
+    assert.equal(res1.isValid, true)
+    assert.equal(res1.errors.sku, undefined)
+
+    const noSkuKey = {
+      name: 'Local Wheat',
+      base_unit: 'kg',
+    }
+    const res2 = validateProductForm(noSkuKey)
+    assert.equal(res2.isValid, true)
+    assert.equal(res2.errors.sku, undefined)
   })
 
   it('rejects product form with negative values', () => {

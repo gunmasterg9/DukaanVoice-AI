@@ -291,7 +291,7 @@ def get_product_sales_report(
                 products_map[p_id] = {
                     "product_id": p_id,
                     "product_name": str(r["product_name"]),
-                    "product_sku": str(r["product_sku"]),
+                    "product_sku": str(r["product_sku"]) if r["product_sku"] is not None else None,
                     "category": str(r["category"]),
                     "base_unit": str(r["base_unit"]),
                     "quantity_sold": 0,
@@ -380,7 +380,7 @@ def get_inventory_summary_report(
 
     if query and query.strip():
         term = f"%{query.strip().lower()}%"
-        where_clauses.append("(LOWER(p.name) LIKE ? OR LOWER(p.sku) LIKE ?)")
+        where_clauses.append("(LOWER(p.name) LIKE ? OR (p.sku IS NOT NULL AND LOWER(p.sku) LIKE ?))")
         params.extend([term, term])
 
     where_sql = f"WHERE {' AND '.join(where_clauses)}" if where_clauses else ""
@@ -447,7 +447,7 @@ def get_inventory_summary_report(
                 InventorySummaryItem(
                     product_id=p_id,
                     name=str(p["name"]),
-                    sku=str(p["sku"]),
+                    sku=str(p["sku"]) if p["sku"] is not None else None,
                     category=str(p["category"]),
                     stock_qty=stock_qty,
                     base_unit=str(p["base_unit"]),
@@ -504,7 +504,7 @@ def get_reconciliation_report(
         for p in products:
             p_id = int(p["id"])
             p_name = str(p["name"])
-            p_sku = str(p["sku"])
+            p_sku = str(p["sku"]) if p["sku"] is not None else None
             base_unit = str(p["base_unit"])
             recorded_stock = int(p["stock_qty"])
 
@@ -689,7 +689,7 @@ def list_inventory_movements(
                 id=int(r["id"]),
                 product_id=int(r["product_id"]),
                 product_name=str(r["product_name"]),
-                product_sku=str(r["product_sku"]),
+                product_sku=str(r["product_sku"]) if r["product_sku"] is not None else None,
                 transaction_id=int(r["transaction_id"]) if r["transaction_id"] else None,
                 movement_type=str(r["movement_type"]),
                 quantity_change=int(r["quantity_change"]),

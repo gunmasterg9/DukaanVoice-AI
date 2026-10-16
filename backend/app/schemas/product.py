@@ -44,7 +44,7 @@ class UnitConversionResponse(BaseModel):
 
 class ProductCreate(BaseModel):
     name: Annotated[str, Field(min_length=1, max_length=200, description="Product name")]
-    sku: Annotated[str, Field(min_length=1, max_length=100, description="Unique SKU code")]
+    sku: Optional[str] = Field(default=None, max_length=100, description="Optional SKU code")
     category: Annotated[str, Field(default="", max_length=100, description="Product category")]
     base_unit: Annotated[str, Field(min_length=1, max_length=50, description="Standard inventory unit")]
     opening_stock: Annotated[int, Field(default=0, ge=0, description="Opening stock in milli-units (1 unit = 1000)")]
@@ -52,13 +52,21 @@ class ProductCreate(BaseModel):
     selling_price: Annotated[int, Field(default=0, ge=0, description="Selling price in integer paise")]
     low_stock_threshold: Annotated[int, Field(default=0, ge=0, description="Low stock alert threshold in milli-units")]
 
-    @field_validator("name", "sku", "base_unit")
+    @field_validator("name", "base_unit")
     @classmethod
     def strip_required_strings(cls, value: str) -> str:
         clean = value.strip()
         if not clean:
             raise ValueError("Field cannot be empty or whitespace only.")
         return clean
+
+    @field_validator("sku")
+    @classmethod
+    def normalize_sku(cls, value: Optional[str]) -> Optional[str]:
+        if value is None:
+            return None
+        clean = value.strip()
+        return clean if clean else None
 
     @field_validator("category")
     @classmethod
@@ -68,20 +76,28 @@ class ProductCreate(BaseModel):
 
 class ProductUpdate(BaseModel):
     name: Annotated[str, Field(min_length=1, max_length=200)]
-    sku: Annotated[str, Field(min_length=1, max_length=100)]
+    sku: Optional[str] = Field(default=None, max_length=100, description="Optional SKU code")
     category: Annotated[str, Field(default="", max_length=100)]
     base_unit: Annotated[str, Field(min_length=1, max_length=50)]
     purchase_price: Annotated[int, Field(default=0, ge=0, description="Purchase price in integer paise")]
     selling_price: Annotated[int, Field(default=0, ge=0, description="Selling price in integer paise")]
     low_stock_threshold: Annotated[int, Field(default=0, ge=0, description="Low stock threshold in milli-units")]
 
-    @field_validator("name", "sku", "base_unit")
+    @field_validator("name", "base_unit")
     @classmethod
     def strip_required_strings(cls, value: str) -> str:
         clean = value.strip()
         if not clean:
             raise ValueError("Field cannot be empty or whitespace only.")
         return clean
+
+    @field_validator("sku")
+    @classmethod
+    def normalize_sku(cls, value: Optional[str]) -> Optional[str]:
+        if value is None:
+            return None
+        clean = value.strip()
+        return clean if clean else None
 
     @field_validator("category")
     @classmethod
@@ -92,7 +108,7 @@ class ProductUpdate(BaseModel):
 class ProductResponse(BaseModel):
     id: int
     name: str
-    sku: str
+    sku: Optional[str] = None
     category: str
     stock_qty: int
     base_unit: str

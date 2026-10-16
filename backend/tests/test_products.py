@@ -419,3 +419,183 @@ def test_safe_behavior_with_preexisting_data(initialized_db):
         assert len(items) == 1
         assert items[0]["name"] == "Pre-existing Dal"
         assert items[0]["stock_qty"] == 15000
+
+
+def test_create_product_without_sku_or_empty_whitespace(initialized_db):
+    """Verify creating products with missing, None, empty, or whitespace SKU."""
+    with TestClient(create_app()) as client:
+        # Missing SKU key entirely
+        res1 = client.post("/api/products", json={
+            "name": "Chana Dal",
+            "base_unit": "kg",
+            "opening_stock": 10000,
+            "purchase_price": 6000,
+            "selling_price": 7500,
+        })
+        assert res1.status_code == 201
+        p1 = res1.json()
+        assert p1["id"] > 0
+        assert p1["name"] == "Chana Dal"
+        assert p1["sku"] is None
+
+        # Explicit None
+        res2 = client.post("/api/products", json={
+            "name": "Moong Dal",
+            "sku": None,
+            "base_unit": "kg",
+            "opening_stock": 5000,
+            "purchase_price": 9000,
+            "selling_price": 11000,
+        })
+        assert res2.status_code == 201
+        p2 = res2.json()
+        assert p2["sku"] is None
+
+        # Empty string
+        res3 = client.post("/api/products", json={
+            "name": "Urad Dal",
+            "sku": "",
+            "base_unit": "kg",
+            "opening_stock": 8000,
+            "purchase_price": 10000,
+            "selling_price": 12500,
+        })
+        assert res3.status_code == 201
+        p3 = res3.json()
+        assert p3["sku"] is None
+
+        # Whitespace-only string
+        res4 = client.post("/api/products", json={
+            "name": "Masoor Dal",
+            "sku": "    ",
+            "base_unit": "kg",
+            "opening_stock": 12000,
+            "purchase_price": 7000,
+            "selling_price": 8500,
+        })
+        assert res4.status_code == 201
+        p4 = res4.json()
+        assert p4["sku"] is None
+
+
+def test_multiple_products_without_sku_coexist(initialized_db):
+    """Verify multiple products without SKU can coexist without UNIQUE constraint violation."""
+    with TestClient(create_app()) as client:
+        names = ["Local Potato", "Local Onion", "Local Tomato", "Local Ginger"]
+        ids = []
+        for name in names:
+            res = client.post("/api/products", json={
+                "name": name,
+                "base_unit": "kg",
+                "opening_stock": 20000,
+                "purchase_price": 2000,
+                "selling_price": 2500,
+            })
+            assert res.status_code == 201
+            assert res.json()["sku"] is None
+            ids.append(res.json()["id"])
+
+        # All 4 products have distinct IDs and null SKUs
+        assert len(set(ids)) == 4
+
+        # Listing them all
+        res_list = client.get("/api/products")
+        assert res_list.status_code == 200
+        items = res_list.json()["items"]
+        assert len(items) == 4
+        for item in items:
+            assert item["sku"] is None
+
+
+def test_product_update_with_and_without_sku(initialized_db):
+    """Verify editing products: removing SKU, adding SKU, and updating non-SKU fields."""
+    with TestClient(create_app()) as client:
+        # 1. Create with unique SKU
+        res = client.post("/api/products", json={
+            "name": "Local Mustard Oil",
+            "sku": "SKU-OIL-01",
+            "base_unit": "litre",
+            "opening_stock": 15000,
+            "purchase_price": 14000,
+            "selling_price": 16500,
+        })
+        assert res.status_code == 201
+        prod_id = res.json()["id"]
+
+        # 2. Update to remove SKU (set to empty / None)
+        res_update1 = client.put(f"/api/products/{prod_id}", json={
+            "name": "Local Mustard Oil Kachi Ghani",
+            "sku": "",
+            "category": "Oils",
+            "base_unit": "litre",
+            "purchase_price": 14500,
+            "selling_price": 17000,
+            "low_stock_threshold": 3000,
+        })
+        assert res_update1.status_code == 200
+        assert res_update1.json()["sku"] is None
+        assert res_update1.json()["name"] == "Local Mustard Oil Kachi Ghani"
+
+        # 3. Update to assign a new unique SKU
+        res_update2 = client.put(f"/api/products/{prod_id}", json={
+            "name": "Local Mustard Oil Kachi Ghani",
+            "sku": "SKU-OIL-NEW",
+            "category": "Oils",
+            "base_unit": "litre",
+            "purchase_price": 14500,
+            "selling_price": 17000,
+            "low_stock_threshold": 3000,
+        })
+        assert res_update2.status_code == 200
+        assert res_update2.json()["sku"] == "SKU-OIL-NEW"
+
+
+def test_product_search_and_transactions_without_sku(initialized_db):
+    """Verify product search and transactions work seamlessly for products without SKU."""
+    with TestClient(create_app()) as client:
+        # Create product without SKU
+        res_p = client.post("/api/products", json={
+            "name": "Fresh Green Chillies",
+            "base_unit": "kg",
+            "opening_stock": 10000,
+            "purchase_price": 4000,
+            "selling_price": 6000,
+        })
+        assert res_p.status_code == 201
+        prod_id = res_p.json()["id"]
+
+        # Search by name matches
+        res_s = client.get("/api/products?query=Chillies")
+        assert res_s.status_code == 200
+        assert res_s.json()["total"] == 1
+        assert res_s.json()["items"][0]["id"] == prod_id
+        assert res_s.json()["items"][0]["sku"] is None
+
+        # Create a confirmed sale transaction on this product
+        draft_res = client.post("/api/transactions", json={
+            "type": "sale",
+            "items": [
+                {
+                    "product_id": prod_id,
+                    "quantity": 2000,  # 2 kg
+                    "unit": "kg",
+                    "unit_price": 6000,
+                }
+            ],
+        })
+        assert draft_res.status_code == 201
+        tx = draft_res.json()
+        assert tx["items"][0]["product_sku"] is None
+        assert tx["items"][0]["product_name"] == "Fresh Green Chillies"
+
+        # Confirm the transaction
+        conf_res = client.patch(f"/api/transactions/{tx['id']}/confirm")
+        assert conf_res.status_code == 200
+        conf_tx = conf_res.json()
+        assert conf_tx["status"] == "confirmed"
+        assert conf_tx["items"][0]["product_sku"] is None
+
+        # Verify stock decreased by 2000 milli-units (10000 -> 8000)
+        p_after = client.get(f"/api/products/{prod_id}").json()
+        assert p_after["stock_qty"] == 8000
+
