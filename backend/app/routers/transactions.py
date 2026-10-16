@@ -487,13 +487,15 @@ def confirm_transaction(transaction_id: int) -> TransactionDetailResponse:
                 detail="Transaction has no line items.",
             )
 
-        # Revalidate products and calculate all stock changes before committing
-        updates = []
+        # 1. Validate inactive products and calculate base_qty for each line item
+        item_base_quantities = []
+        product_aggregate_req: dict[int, int] = {}
+        product_meta: dict[int, Any] = {}
+
         for it in items:
-            p_id = it["product_id"]
+            p_id = int(it["product_id"])
             p_name = it["product_name"]
             base_unit = it["base_unit"]
-            current_stock = int(it["stock_qty"])
 
             if not it["active"]:
                 raise HTTPException(
@@ -509,36 +511,62 @@ def confirm_transaction(transaction_id: int) -> TransactionDetailResponse:
                 line_unit=it["unit"],
                 line_quantity_milli=int(it["quantity"]),
             )
+            item_base_quantities.append((it, base_qty))
+            product_aggregate_req[p_id] = product_aggregate_req.get(p_id, 0) + base_qty
+            product_meta[p_id] = {"name": p_name, "base_unit": base_unit}
+
+        # 2. Revalidate aggregate stock from database to prevent stale-stock overwrites
+        running_stock: dict[int, int] = {}
+        for p_id, total_req in product_aggregate_req.items():
+            curr_row = conn.execute(
+                "SELECT stock_qty, name, base_unit FROM products WHERE id = ?", (p_id,)
+            ).fetchone()
+            curr_stock = int(curr_row["stock_qty"])
+            p_name = curr_row["name"]
+            base_unit = curr_row["base_unit"]
 
             if tx_type == "sale":
-                if current_stock < base_qty:
+                if curr_stock < total_req:
                     raise HTTPException(
                         status_code=status.HTTP_400_BAD_REQUEST,
                         detail=(
                             f"Insufficient stock for product '{p_name}'. "
-                            f"Available: {current_stock / 1000} {base_unit}, "
-                            f"Required: {base_qty / 1000} {base_unit}."
+                            f"Available: {curr_stock / 1000} {base_unit}, "
+                            f"Required total across line items: {total_req / 1000} {base_unit}."
                         ),
                     )
-                new_stock = current_stock - base_qty
+            running_stock[p_id] = curr_stock
+
+        # 3. Calculate continuous sequential movements per line
+        updates = []
+        for it, base_qty in item_base_quantities:
+            p_id = int(it["product_id"])
+            stock_before = running_stock[p_id]
+
+            if tx_type == "sale":
+                stock_after = stock_before - base_qty
                 quantity_change = -base_qty
             else:  # purchase
-                new_stock = current_stock + base_qty
+                stock_after = stock_before + base_qty
                 quantity_change = base_qty
 
+            running_stock[p_id] = stock_after
             updates.append({
                 "product_id": p_id,
-                "current_stock": current_stock,
-                "new_stock": new_stock,
+                "stock_before": stock_before,
+                "stock_after": stock_after,
                 "quantity_change": quantity_change,
             })
 
-        # Apply stock updates and record movements
-        for u in updates:
+        # 4. Apply final updated stock to products
+        for p_id, final_stock in running_stock.items():
             conn.execute(
                 "UPDATE products SET stock_qty = ?, updated_at = datetime('now') WHERE id = ?",
-                (u["new_stock"], u["product_id"]),
+                (final_stock, p_id),
             )
+
+        # 5. Insert individual continuous inventory movements
+        for u in updates:
             conn.execute(
                 """
                 INSERT INTO inventory_movements (
@@ -552,8 +580,8 @@ def confirm_transaction(transaction_id: int) -> TransactionDetailResponse:
                     transaction_id,
                     tx_type,
                     u["quantity_change"],
-                    u["current_stock"],
-                    u["new_stock"],
+                    u["stock_before"],
+                    u["stock_after"],
                 ),
             )
 
@@ -659,11 +687,12 @@ def reverse_transaction(transaction_id: int) -> TransactionDetailResponse:
         ).fetchall()
 
         updates = []
+        item_base_quantities = []
+        product_aggregate_req: dict[int, int] = {}
         for it in items:
-            p_id = it["product_id"]
+            p_id = int(it["product_id"])
             p_name = it["product_name"]
             base_unit = it["base_unit"]
-            current_stock = int(it["stock_qty"])
 
             base_qty = _calculate_base_quantity(
                 conn=conn,
@@ -673,38 +702,61 @@ def reverse_transaction(transaction_id: int) -> TransactionDetailResponse:
                 line_unit=it["unit"],
                 line_quantity_milli=int(it["quantity"]),
             )
+            item_base_quantities.append((it, base_qty))
+            product_aggregate_req[p_id] = product_aggregate_req.get(p_id, 0) + base_qty
 
-            if tx_type == "sale":
-                # Reversing a sale returns items to stock
-                new_stock = current_stock + base_qty
-                quantity_change = base_qty
-            else:  # purchase
-                # Reversing a purchase removes items from stock
-                if current_stock < base_qty:
+        # Revalidate aggregate stock for purchase reversals
+        running_stock: dict[int, int] = {}
+        for p_id, total_req in product_aggregate_req.items():
+            curr_row = conn.execute(
+                "SELECT stock_qty, name, base_unit FROM products WHERE id = ?", (p_id,)
+            ).fetchone()
+            curr_stock = int(curr_row["stock_qty"])
+            p_name = curr_row["name"]
+            base_unit = curr_row["base_unit"]
+
+            if tx_type == "purchase":
+                if curr_stock < total_req:
                     raise HTTPException(
                         status_code=status.HTTP_400_BAD_REQUEST,
                         detail=(
                             f"Cannot reverse purchase for product '{p_name}': insufficient stock available. "
-                            f"Current stock is {current_stock / 1000} {base_unit}, "
-                            f"Required to reverse is {base_qty / 1000} {base_unit}."
+                            f"Current stock is {curr_stock / 1000} {base_unit}, "
+                            f"Required to reverse total is {total_req / 1000} {base_unit}."
                         ),
                     )
-                new_stock = current_stock - base_qty
+            running_stock[p_id] = curr_stock
+
+        # Calculate continuous compensating movements
+        updates = []
+        for it, base_qty in item_base_quantities:
+            p_id = int(it["product_id"])
+            stock_before = running_stock[p_id]
+
+            if tx_type == "sale":
+                stock_after = stock_before + base_qty
+                quantity_change = base_qty
+            else:  # purchase
+                stock_after = stock_before - base_qty
                 quantity_change = -base_qty
 
+            running_stock[p_id] = stock_after
             updates.append({
                 "product_id": p_id,
-                "current_stock": current_stock,
-                "new_stock": new_stock,
+                "stock_before": stock_before,
+                "stock_after": stock_after,
                 "quantity_change": quantity_change,
             })
 
-        # Apply stock updates and record compensating movements
-        for u in updates:
+        # Apply stock updates to products
+        for p_id, final_stock in running_stock.items():
             conn.execute(
                 "UPDATE products SET stock_qty = ?, updated_at = datetime('now') WHERE id = ?",
-                (u["new_stock"], u["product_id"]),
+                (final_stock, p_id),
             )
+
+        # Record compensating inventory movements
+        for u in updates:
             conn.execute(
                 """
                 INSERT INTO inventory_movements (
@@ -717,8 +769,8 @@ def reverse_transaction(transaction_id: int) -> TransactionDetailResponse:
                     u["product_id"],
                     transaction_id,
                     u["quantity_change"],
-                    u["current_stock"],
-                    u["new_stock"],
+                    u["stock_before"],
+                    u["stock_after"],
                 ),
             )
 
@@ -747,6 +799,16 @@ def reverse_transaction(transaction_id: int) -> TransactionDetailResponse:
             prev_balance = int(last_ledger["balance_after"]) if last_ledger else 0
             new_balance = prev_balance - tx_total
 
+            # Supported Policy: If repayments were made before reversal, new_balance becomes negative.
+            # This explicitly represents customer advance credit / deposit (Jama surplus).
+            if new_balance < 0:
+                policy_note = (
+                    f"Reversal of credit sale #{transaction_id} "
+                    f"(Customer advance credit surplus: ₹{abs(new_balance) / 100:.2f})"
+                )
+            else:
+                policy_note = f"Reversal of credit sale #{transaction_id}"
+
             conn.execute(
                 """
                 INSERT INTO customer_ledger (
@@ -759,7 +821,7 @@ def reverse_transaction(transaction_id: int) -> TransactionDetailResponse:
                     transaction_id,
                     tx_total,
                     new_balance,
-                    f"Reversal of credit sale #{transaction_id}",
+                    policy_note,
                 ),
             )
 

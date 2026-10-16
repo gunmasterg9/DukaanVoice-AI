@@ -579,3 +579,83 @@ def test_existing_product_data_remains_intact(initialized_db):
         p_soap = client.get(f"/api/products/{soap_id}").json()
         assert p_soap["sku"] == "SKU-SOAP-01"
         assert p_soap["category"] == "Personal Care"
+
+
+def test_multi_line_same_product_aggregate_stock_confirmation(initialized_db):
+    """Regression test: transaction with multiple lines for the same product must aggregate stock and prevent stale overwrites."""
+    with TestClient(create_app()) as client:
+        # Create product with 10 units (10,000 milli-units)
+        p = client.post("/api/products", json={
+            "name": "Basmati Rice 1kg",
+            "base_unit": "packet",
+            "opening_stock": 10000,
+            "selling_price": 9000,
+        }).json()
+        p_id = p["id"]
+
+        # Draft sale with TWO lines for the same product: 3 packets and 4 packets (Total: 7 packets)
+        tx = client.post("/api/transactions", json={
+            "type": "sale",
+            "items": [
+                {"product_id": p_id, "quantity": 3000, "unit": "packet", "unit_price": 9000},
+                {"product_id": p_id, "quantity": 4000, "unit": "packet", "unit_price": 9000},
+            ],
+        }).json()
+        tx_id = tx["id"]
+        assert len(tx["items"]) == 2
+
+        # Confirm transaction
+        conf_res = client.patch(f"/api/transactions/{tx_id}/confirm")
+        assert conf_res.status_code == 200
+        conf_data = conf_res.json()
+        assert conf_data["status"] == "confirmed"
+
+        # Stock must be exactly 10,000 - 3,000 - 4,000 = 3,000 milli-units (3 packets)
+        p_after = client.get(f"/api/products/{p_id}").json()
+        assert p_after["stock_qty"] == 3000
+
+        # Movements must be continuous: 10000 -> 7000 -> 3000
+        movements = conf_data["movements"]
+        assert len(movements) == 2
+        m1 = movements[0]
+        m2 = movements[1]
+        assert m1["stock_before"] == 10000
+        assert m1["quantity_change"] == -3000
+        assert m1["stock_after"] == 7000
+
+        assert m2["stock_before"] == 7000
+        assert m2["quantity_change"] == -4000
+        assert m2["stock_after"] == 3000
+
+
+def test_multi_line_same_product_aggregate_stock_insufficient(initialized_db):
+    """Regression test: transaction with multiple lines must validate total aggregate quantity against available stock."""
+    with TestClient(create_app()) as client:
+        # Create product with 5 units (5,000 milli-units)
+        p = client.post("/api/products", json={
+            "name": "Sunflower Oil 1L",
+            "base_unit": "bottle",
+            "opening_stock": 5000,
+            "selling_price": 14000,
+        }).json()
+        p_id = p["id"]
+
+        # Draft sale with TWO lines: 3 bottles and 3 bottles (Total: 6 bottles > 5 available)
+        # Individually each line (3 <= 5) would pass if not aggregated!
+        tx = client.post("/api/transactions", json={
+            "type": "sale",
+            "items": [
+                {"product_id": p_id, "quantity": 3000, "unit": "bottle", "unit_price": 14000},
+                {"product_id": p_id, "quantity": 3000, "unit": "bottle", "unit_price": 14000},
+            ],
+        }).json()
+        tx_id = tx["id"]
+
+        # Confirm must be rejected with 400 Bad Request
+        conf_res = client.patch(f"/api/transactions/{tx_id}/confirm")
+        assert conf_res.status_code == 400
+        assert "Insufficient stock" in conf_res.json()["detail"]
+
+        # Stock must remain untouched at 5,000 milli-units
+        p_after = client.get(f"/api/products/{p_id}").json()
+        assert p_after["stock_qty"] == 5000

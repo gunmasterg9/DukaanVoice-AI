@@ -146,6 +146,13 @@ def test_credit_sale_and_reversal_ledger(client):
     assert len(c_detail["ledger"]) == 3
     assert c_detail["ledger"][0]["entry_type"] == "adjustment"
     assert c_detail["ledger"][0]["amount"] == 5600
+    # Explicit policy verification: notes must describe advance credit surplus
+    assert "advance credit surplus" in c_detail["ledger"][0]["notes"].lower()
+
+    # Statement must clearly state Customer Advance Credit Surplus
+    stmt = client.get(f"/api/customers/{cust_id}/statement").json()
+    assert stmt["closing_balance"] == -3000
+    assert "advance credit surplus" in stmt["shareable_text"].lower()
 
 
 def test_credit_sale_requires_customer(client):

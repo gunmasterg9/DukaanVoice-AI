@@ -157,3 +157,52 @@ def test_cash_closing_reconciliation_math(client):
         },
     )
     assert dup.status_code == 400
+
+
+def test_cash_refund_attributed_to_reversal_date_and_preserves_finalized(client, initialized_db):
+    """Regression test: cash refunds must be attributed to the date reversal occurs, not sale date.
+    Finalized closings on the original sale date must remain immutable."""
+    import sqlite3
+    from app.database import connection
+    from datetime import date
+
+    day1 = "2026-10-10"
+    today = date.today().isoformat()
+
+    # 1. Create and confirm a cash sale
+    tx_id = _create_and_confirm_sale(client, "cash", 20000)
+
+    # Backdate transaction to day1
+    with connection() as conn:
+        conn.execute("UPDATE transactions SET created_at = ? || ' 10:00:00', confirmed_at = ? || ' 10:00:00' WHERE id = ?", (day1, day1, tx_id))
+
+    # 2. Finalize day1 cash closing with opening 0, cash sales 20000 -> expected 20000, counted 20000
+    res1 = client.post(
+        "/api/cash-closing",
+        json={
+            "business_date": day1,
+            "opening_cash": 0,
+            "counted_cash": 20000,
+            "finalize": True,
+        },
+    )
+    assert res1.status_code == 201
+    fin1 = res1.json()
+    assert fin1["status"] == "finalized"
+    assert fin1["expected_cash"] == 20000
+    assert fin1["cash_refunds"] == 0
+
+    # 3. Reverse the sale TODAY (reversal movement created today)
+    rev_res = client.patch(f"/api/transactions/{tx_id}/reverse")
+    assert rev_res.status_code == 200
+
+    # 4. Preview TODAY's cash closing:
+    # Cash refund of 20000 must be attributed to TODAY (when reversal occurred), NOT day1!
+    prev_today = client.get(f"/api/cash-closing/preview?date={today}").json()
+    assert prev_today["cash_refunds"] == 20000
+
+    # 5. Check day1: It was finalized! Its audit record MUST NOT be altered or recalculated
+    prev_day1 = client.get(f"/api/cash-closing/preview?date={day1}").json()
+    assert prev_day1["is_already_closed"] is True
+    assert prev_day1["cash_refunds"] == 0
+    assert prev_day1["expected_cash"] == 20000

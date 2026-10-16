@@ -359,6 +359,11 @@ def get_customer_statement(
             return f"{sign}Rs.{ap // 100}.{ap % 100:02d}"
 
         date_span = f"{from_date or 'Start'} to {to_date or 'Today'}"
+        if closing_balance < 0:
+            bal_line = f"*Customer Advance Credit Surplus (Store Deposit): Rs.{abs(closing_balance) // 100}.{abs(closing_balance) % 100:02d}*"
+        else:
+            bal_line = f"*Total Balance Due: {_fmt(closing_balance)}*"
+
         shareable_text = (
             f"*Khata Statement - DukaanVoice AI*\n"
             f"Customer: {customer['name']}\n"
@@ -368,7 +373,7 @@ def get_customer_statement(
             f"Total Credit Sales: {_fmt(total_debit)}\n"
             f"Total Payments Received: {_fmt(total_credit)}\n"
             f"---------------------------------\n"
-            f"*Total Balance Due: {_fmt(closing_balance)}*\n"
+            f"{bal_line}\n"
             f"---------------------------------\n"
             f"Thank you for your business!"
         )

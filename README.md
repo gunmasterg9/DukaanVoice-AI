@@ -158,7 +158,7 @@ Copy-Item .env.example .env
 DukaanVoice AI includes comprehensive test suites across backend, frontend, and static analysis:
 
 ```powershell
-# 1. Backend test suite (70 tests - 100% pass)
+# 1. Backend test suite (73 tests - 100% pass)
 cd backend
 .\.venv\Scripts\pytest.exe -v
 
@@ -169,11 +169,15 @@ npm.cmd test
 # 3. Frontend static analysis & linting (0 warnings, 0 errors)
 npx.cmd oxlint
 
-# 4. Production build compilation (529ms)
+# 4. Production build compilation
 npm.cmd run build
 
-# 5. Full 10-step shop lifecycle simulation
-python ..\scratch\e2e_verification.py
+# 5. Standalone Python E2E lifecycle audit (isolated temporary DB)
+cd ..
+.\backend\.venv\Scripts\python.exe scripts\e2e_verification.py
+
+# 6. Live Kirana API E2E test runner (isolated test DB, Node.js)
+node live_kirana_e2e_test.mjs
 ```
 
 ---
@@ -197,7 +201,7 @@ DukaanVoice AI/
 │   │   └── schemas/            # Pydantic v2 request/response models
 │   ├── data/                   # Local SQLite storage (dukaanvoice.db)
 │   ├── backups/                # Non-blocking SQLite online backup files
-│   └── tests/                  # 70 Pytest unit and integration tests
+│   └── tests/                  # 73 Pytest unit and integration tests
 ├── frontend/
 │   ├── src/
 │   │   ├── App.jsx             # Top-level navigation & tab layout
@@ -213,6 +217,9 @@ DukaanVoice AI/
 │   │   └── services/           # Axios API client & command parser
 │   ├── package.json
 │   └── vite.config.js
+├── scripts/
+│   └── e2e_verification.py     # Standalone Python E2E lifecycle test on isolated database
+├── live_kirana_e2e_test.mjs    # Strengthened Node.js Kirana E2E integration test
 ├── docs/
 │   ├── FINAL_QA_REPORT.md      # Comprehensive QA audit, metrics, and sign-off
 │   ├── RELEASE_NOTES.md        # Feature highlights and release details

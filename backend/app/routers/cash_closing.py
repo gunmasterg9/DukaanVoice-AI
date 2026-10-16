@@ -56,16 +56,16 @@ def _calculate_daily_cash(
         ).fetchone()
         opening_cash = int(prev[0]) if prev else 0
 
-    # 2. Cash sales (confirmed sales with payment_method == 'cash')
+    # 2. Cash sales (sales confirmed on this business date with payment_method == 'cash')
     sales_row = conn.execute(
         """
         SELECT COALESCE(SUM(ti.line_total), 0)
         FROM transactions t
         JOIN transaction_items ti ON t.id = ti.transaction_id
         WHERE t.type = 'sale'
-          AND t.status = 'confirmed'
+          AND t.status IN ('confirmed', 'reversed')
           AND t.payment_method = 'cash'
-          AND date(t.created_at) = ?
+          AND date(COALESCE(t.confirmed_at, t.created_at)) = ?
         """,
         (business_date,),
     ).fetchone()
@@ -98,15 +98,22 @@ def _calculate_daily_cash(
     cash_expenses = int(exp_row[0]) if exp_row else 0
 
     # 5. Cash refunds / reversals of sales
+    # Must be attributed to the business date on which the reversal actually occurred
     refund_row = conn.execute(
         """
         SELECT COALESCE(SUM(ti.line_total), 0)
         FROM transactions t
         JOIN transaction_items ti ON t.id = ti.transaction_id
+        JOIN (
+            SELECT transaction_id, date(created_at) AS reversal_date
+            FROM inventory_movements
+            WHERE movement_type = 'reversal'
+            GROUP BY transaction_id
+        ) rev ON t.id = rev.transaction_id
         WHERE t.type = 'sale'
           AND t.status = 'reversed'
           AND t.payment_method = 'cash'
-          AND date(t.created_at) = ?
+          AND rev.reversal_date = ?
         """,
         (business_date,),
     ).fetchone()
@@ -127,23 +134,40 @@ def _calculate_daily_cash(
 @router.get("/preview", response_model=CashClosingPreviewResponse)
 def get_cash_closing_preview(
     business_date: Optional[str] = Query(None, description="Date (YYYY-MM-DD) to calculate closing for"),
+    date_param: Optional[str] = Query(None, alias="date", description="Alias for business_date"),
     opening_cash: Optional[int] = Query(None, ge=0, description="Optional override for opening cash in paise"),
 ) -> CashClosingPreviewResponse:
     """Calculate live expected cash drawer balance for a business date."""
-    target_date = business_date.strip() if business_date and business_date.strip() else date.today().isoformat()
+    raw_date = business_date or date_param
+    target_date = raw_date.strip() if raw_date and raw_date.strip() else date.today().isoformat()
     try:
         date.fromisoformat(target_date)
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD.")
 
     with connection(create=False) as conn:
-        metrics = _calculate_daily_cash(conn, target_date, override_opening=opening_cash)
         existing = conn.execute(
             "SELECT * FROM cash_closings WHERE business_date = ?", (target_date,)
         ).fetchone()
 
+        # If already finalized, preserve the immutable finalized closing record and audit integrity!
+        if existing and existing["status"] == "finalized":
+            existing_resp = CashClosingResponse(**_row_to_closing(existing))
+            return CashClosingPreviewResponse(
+                business_date=target_date,
+                opening_cash=int(existing["opening_cash"]),
+                cash_sales=int(existing["cash_sales"]),
+                cash_repayments=int(existing["cash_repayments"]),
+                cash_expenses=int(existing["cash_expenses"]),
+                cash_refunds=int(existing["cash_refunds"]),
+                expected_cash=int(existing["expected_cash"]),
+                is_already_closed=True,
+                existing_closing=existing_resp,
+            )
+
+        metrics = _calculate_daily_cash(conn, target_date, override_opening=opening_cash)
         existing_resp = CashClosingResponse(**_row_to_closing(existing)) if existing else None
-        is_already_closed = existing["status"] == "finalized" if existing else False
+        is_already_closed = False
 
         return CashClosingPreviewResponse(
             business_date=target_date,

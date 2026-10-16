@@ -18,7 +18,7 @@ EXPENSE_CATEGORIES = [
 
 
 class ExpenseCreate(BaseModel):
-    expense_date: Annotated[str, Field(default="", description="Expense date (YYYY-MM-DD)")] = ""
+    expense_date: Annotated[str, Field(default="", validate_default=True, description="Expense date (YYYY-MM-DD)")] = ""
     category: Annotated[str, Field(min_length=1, max_length=100, description="Expense category")]
     amount: Annotated[int, Field(gt=0, description="Expense amount in integer paise")]
     payment_method: Annotated[
@@ -27,12 +27,12 @@ class ExpenseCreate(BaseModel):
     ]
     notes: Annotated[str, Field(default="", max_length=500, description="Notes or invoice/bill reference")] = ""
 
-    @field_validator("expense_date")
+    @field_validator("expense_date", mode="before")
     @classmethod
-    def validate_date(cls, value: str) -> str:
-        clean = value.strip()
-        if not clean:
+    def validate_date(cls, value: Any) -> str:
+        if not value or not str(value).strip():
             return date.today().isoformat()
+        clean = str(value).strip()
         # Verify YYYY-MM-DD
         try:
             date.fromisoformat(clean)

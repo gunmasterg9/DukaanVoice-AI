@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import sqlite3
+from datetime import date
 from typing import Any, Optional
 
 from fastapi import APIRouter, HTTPException, Query, status
@@ -59,6 +60,7 @@ def get_expense_categories() -> list[str]:
 )
 def create_expense(payload: ExpenseCreate) -> ExpenseResponse:
     """Record a shop expense (e.g. rent, electricity, transport, wages)."""
+    exp_date = payload.expense_date.strip() if payload.expense_date and payload.expense_date.strip() else date.today().isoformat()
     with connection() as conn:
         cursor = conn.execute(
             """
@@ -69,7 +71,7 @@ def create_expense(payload: ExpenseCreate) -> ExpenseResponse:
             VALUES (?, ?, ?, ?, ?, 'active', datetime('now'), datetime('now'))
             """,
             (
-                payload.expense_date,
+                exp_date,
                 payload.category,
                 payload.amount,
                 payload.payment_method,
