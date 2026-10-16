@@ -23,7 +23,7 @@ def test_ready_succeeds_with_valid_database(tmp_db_path):
     body = response.json()
     assert body["status"] == "ready"
     assert body["database"] == "ok"
-    assert body["schema_version"] == 3
+    assert body["schema_version"] == 4
 
 
 def test_ready_fails_cleanly_when_database_unavailable(tmp_db_path):

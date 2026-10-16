@@ -2469,5 +2469,294 @@ a:hover {
   }
 }
 
+/* ==========================================================================
+   Expenses Register & Category Chips
+   ========================================================================== */
+.expenses-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
 
+.category-chips-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  padding: 4px 0;
+}
 
+.chip-btn {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  border-radius: var(--radius-full);
+  padding: 6px 14px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.chip-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  border-color: var(--color-primary-light);
+}
+
+.chip-btn.active {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 10px rgba(99, 102, 241, 0.4);
+}
+
+.category-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.row-reversed {
+  opacity: 0.55;
+  text-decoration: line-through;
+  background: rgba(239, 68, 68, 0.05);
+}
+
+/* ==========================================================================
+   Daily Cash Closing & Reconciliation
+   ========================================================================== */
+.cash-closing-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.date-picker-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cash-closing-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-lg);
+}
+
+@media (max-width: 900px) {
+  .cash-closing-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.cash-reconciliation-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  background: linear-gradient(145deg, rgba(30, 30, 50, 0.95), rgba(20, 20, 38, 0.95));
+  border: 1px solid var(--border-color);
+}
+
+.reconciliation-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 8px 0;
+}
+
+.breakdown-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.95rem;
+  padding: 4px 0;
+}
+
+.breakdown-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 140px;
+}
+
+.currency-prefix {
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.breakdown-divider {
+  border: 0;
+  border-top: 1px dashed var(--border-color);
+  margin: 6px 0;
+}
+
+.expected-row {
+  padding: 10px 0;
+  border-top: 2px solid var(--border-color);
+  border-bottom: 2px solid var(--border-color);
+  background: rgba(99, 102, 241, 0.08);
+  border-radius: var(--radius-sm);
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+.cash-rule-note {
+  margin-top: auto;
+  line-height: 1.4;
+  padding-top: 8px;
+}
+
+.cash-counting-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: var(--space-md);
+}
+
+.difference-display-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px;
+  background: rgba(20, 20, 35, 0.6);
+  border-radius: var(--radius-md);
+  margin: 12px 0;
+  border: 1px solid var(--border-color);
+}
+
+.diff-label {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.closing-action-buttons {
+  display: flex;
+  gap: var(--space-md);
+  margin-top: var(--space-md);
+}
+
+.closing-action-buttons button {
+  flex: 1;
+}
+
+.finalized-seal {
+  padding: 14px;
+  text-align: center;
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  border-radius: var(--radius-md);
+  color: #10b981;
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.confirm-summary-box {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  margin: 12px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* ==========================================================================
+   Customer Balance Statement Modal
+   ========================================================================== */
+.modal-lg {
+  max-width: 820px;
+  width: 95%;
+}
+
+.statement-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-end;
+  padding: 12px;
+  background: rgba(20, 20, 35, 0.5);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-md);
+}
+
+.statement-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: var(--space-md);
+}
+
+@media (max-width: 700px) {
+  .statement-summary-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.stat-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stat-card-highlight {
+  border-color: #f59e0b;
+  background: rgba(245, 158, 11, 0.08);
+}
+
+.stat-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.stat-value {
+  font-size: 1.25rem;
+  font-weight: 800;
+  font-family: var(--font-mono, monospace);
+}
+
+.statement-table-wrapper {
+  max-height: 280px;
+  overflow-y: auto;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-md);
+}
+
+.statement-share-preview {
+  background: #0f172a;
+  border: 1px solid #1e293b;
+  border-radius: var(--radius-sm);
+  padding: 10px;
+  font-size: 0.78rem;
+  color: #94a3b8;
+  max-height: 120px;
+  overflow-y: auto;
+  margin-bottom: var(--space-sm);
+}
+
+.statement-share-preview pre {
+  margin: 0;
+  white-space: pre-wrap;
+  font-family: monospace;
+}
+
+.statement-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}

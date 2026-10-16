@@ -1,162 +1,217 @@
-# Database schema (Phase 1)
+# DukaanVoice AI - Database Schema Specification (Schema Version 4)
 
-Engine: SQLite 3 via Python's `sqlite3` module. No ORM.
+**Database Engine:** SQLite 3 via Python's standard library `sqlite3` module. No ORM.  
+**Default Live Database Path:** `backend/data/dukaanvoice.db`  
+**Current Schema Version:** `4` (`004_expenses_and_cash_closings`)
 
-Default live file: `backend/data/dukaanvoice.db`  
-This directory is application data, not a temp folder and not the frontend build output.
+---
 
-## Conventions
+## 1. Accounting & Mathematical Invariants
 
-### Money (paise)
+### A. Money (Integer Paise)
+All monetary amounts (`purchase_price`, `selling_price`, `unit_price`, `line_total`, `amount`, `credit_limit`, `balance_after`, `opening_cash`, `cash_sales`, `expected_cash`, `actual_cash`, `difference`) are stored as **INTEGER paise**.
+- ₹1.00 = `100` paise
+- ₹12.50 = `1250` paise
+- Floating-point representations (`REAL`, `FLOAT`, `DOUBLE`) are strictly forbidden to eliminate rounding drift.
 
-`purchase_price`, `selling_price`, `unit_price`, and `line_total` are **INTEGER paise**.
+### B. Inventory Stock (Integer Milli-Units)
+All stock quantities (`stock_qty`, `low_stock_threshold`, line item `quantity`, and inventory movements `quantity_change`, `stock_before`, `stock_after`) are stored as **INTEGER milli-units**.
+- 1 standard unit = `1000` milli-units
+- 2.5 kg = `2500` milli-units
+- Count and weight items operate on the exact same auditable integer representation.
 
-- ₹1.00 = `100`
-- ₹12.50 = `1250`
+### C. Cash vs Digital Distinction
+Physical cash drawer tracking (`cash_closings`) strictly isolates movements where `payment_method == 'cash'`. Digital receipts (UPI, Bank NEFT/RTGS) and credit transactions (Udhaar) never pollute physical drawer totals.
 
-Do not store currency as REAL/float.
+---
 
-### Stock and units (milli-units)
+## 2. Table Catalog (10 Tables)
 
-`stock_qty`, `low_stock_threshold`, transaction `quantity`, and inventory `quantity_change` / `stock_before` / `stock_after` are **INTEGER milli-units**.
-
-- 1 unit of the stated unit = `1000` milli-units
-- 2.5 kg with `base_unit = kg` is stored as `2500`
-
-Product `stock_qty` is always in the product **base unit**.
-
-Transaction line `quantity` stays in the line's original `unit`. Conversion into the base unit is allowed later only through a matching `unit_conversions` row. Phase 1 does not post stock movements.
-
-### Conversion factor
-
-`unit_conversions.factor` is an INTEGER: how many milli-units of `to_unit` equal **one** `from_unit`.
-
-Example: 1 box = 24 pieces → `from_unit = box`, `to_unit = piece`, `factor = 24000`.
-
-`from_unit` and `to_unit` must differ.
-
-## Tables
-
-### schema_migrations
-
-| Column | Type | Notes |
-| --- | --- | --- |
-| version | INTEGER PK | Monotonic schema version |
-| name | TEXT NOT NULL | Migration name |
-| applied_at | TEXT | UTC timestamp from SQLite `datetime('now')` |
-
-Current application version: **1** (`001_initial_foundation`).
-
-### products
-
-| Column | Type | Constraints |
-| --- | --- | --- |
-| id | INTEGER | PRIMARY KEY |
-| name | TEXT | NOT NULL, non-empty |
-| sku | TEXT | NOT NULL, UNIQUE, non-empty |
-| category | TEXT | NOT NULL default `''` |
-| stock_qty | INTEGER | NOT NULL default 0, `>= 0`, milli-units of `base_unit` |
-| base_unit | TEXT | NOT NULL, non-empty |
-| purchase_price | INTEGER | NOT NULL default 0, `>= 0`, paise |
-| selling_price | INTEGER | NOT NULL default 0, `>= 0`, paise |
-| low_stock_threshold | INTEGER | NOT NULL default 0, `>= 0`, milli-units |
-| active | INTEGER | NOT NULL default 1, `0` or `1` |
-| created_at | TEXT | NOT NULL |
-| updated_at | TEXT | NOT NULL |
-
-### unit_conversions
-
-| Column | Type | Constraints |
-| --- | --- | --- |
-| id | INTEGER | PRIMARY KEY |
-| product_id | INTEGER | NOT NULL, FK → products(id) |
-| from_unit | TEXT | NOT NULL |
-| to_unit | TEXT | NOT NULL |
-| factor | INTEGER | NOT NULL, `> 0` |
-
-UNIQUE `(product_id, from_unit, to_unit)`.
-
-### transactions
-
-| Column | Type | Constraints |
-| --- | --- | --- |
-| id | INTEGER | PRIMARY KEY |
-| type | TEXT | `sale` or `purchase` |
-| status | TEXT | `draft`, `confirmed`, or `reversed` (default `draft`) |
-| idempotency_key | TEXT | UNIQUE (multiple NULLs allowed) |
-| original_instruction | TEXT | NOT NULL default `''` |
-| created_at | TEXT | NOT NULL |
-| confirmed_at | TEXT | nullable |
-
-Phase 3 implements sales and purchase transaction drafts, atomic confirmation, and auditable reversals.
-
-### transaction_items
-
-| Column | Type | Constraints |
-| --- | --- | --- |
-| id | INTEGER | PRIMARY KEY |
-| transaction_id | INTEGER | NOT NULL, FK → transactions(id) |
-| product_id | INTEGER | NOT NULL, FK → products(id) |
-| quantity | INTEGER | `> 0`, milli-units of `unit` |
-| unit | TEXT | NOT NULL |
-| unit_price | INTEGER | `>= 0`, paise |
-| line_total | INTEGER | `>= 0`, paise |
-
-### inventory_movements
-
-| Column | Type | Constraints |
-| --- | --- | --- |
-| id | INTEGER | PRIMARY KEY |
-| product_id | INTEGER | NOT NULL, FK → products(id) |
-| transaction_id | INTEGER | nullable FK → transactions(id) |
-| movement_type | TEXT | `sale`, `purchase`, `adjustment`, `reversal` |
-| quantity_change | INTEGER | `<> 0`, milli-units of product base unit |
-| stock_before | INTEGER | `>= 0` |
-| stock_after | INTEGER | `>= 0` |
-| created_at | TEXT | NOT NULL |
-
-Phase 3 activates this table as an auditable ledger: initial adjustments on opening stock, sales deductions, purchase additions, and compensating movements on transaction reversals. Historical movements are never deleted or modified.
-
-## Indexes
-
-- products: sku, active, category
-- unit_conversions: product_id
-- transactions: (type, status), created_at
-- transaction_items: transaction_id, product_id
-- inventory_movements: product_id, transaction_id
-
-## Foreign keys
-
-Every connection executes `PRAGMA foreign_keys = ON`.
-
-## Initialization and migrations
-
-Command:
-
-```powershell
-cd "C:\Users\RAHUL\Desktop\gautam\DukaanVoice AI\backend"
-.\.venv\Scripts\python.exe -m app.cli init-db
+### 1. `schema_migrations`
+Tracks monotonic migration version history.
+```sql
+CREATE TABLE schema_migrations (
+    version INTEGER PRIMARY KEY,
+    name TEXT NOT NULL,
+    applied_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
 ```
 
-Rules:
+### 2. `products`
+Shop inventory items. Supports quick product entry; SKU is optional for neighborhood retailers while non-empty SKUs remain strictly unique.
+```sql
+CREATE TABLE products (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL CHECK (length(trim(name)) > 0),
+    sku TEXT,
+    category TEXT NOT NULL DEFAULT '',
+    stock_qty INTEGER NOT NULL DEFAULT 0 CHECK (stock_qty >= 0),
+    base_unit TEXT NOT NULL CHECK (length(trim(base_unit)) > 0),
+    purchase_price INTEGER NOT NULL DEFAULT 0 CHECK (purchase_price >= 0),
+    selling_price INTEGER NOT NULL DEFAULT 0 CHECK (selling_price >= 0),
+    low_stock_threshold INTEGER NOT NULL DEFAULT 0 CHECK (low_stock_threshold >= 0),
+    active INTEGER NOT NULL DEFAULT 1 CHECK (active IN (0, 1)),
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE UNIQUE INDEX idx_products_sku_unique ON products(sku) WHERE sku IS NOT NULL AND sku != '';
+CREATE INDEX idx_products_category ON products(category);
+CREATE INDEX idx_products_active ON products(active);
+```
 
-1. If the database file does not exist, create it and apply version 1 in one connection commit.
-2. If the file exists and already has `schema_migrations` at version 1, do nothing destructive. Data remains.
-3. If the file exists with user tables but **no** `schema_migrations`, stop. Do not drop, recreate, or guess a conversion from an unknown schema.
-4. If the recorded version is newer or older than the application, stop and require an explicit migration.
-5. Tables are never dropped automatically. Databases are never deleted automatically.
+### 3. `unit_conversions`
+Packaging conversions relative to product base units (e.g. 1 bag = 50 kg).
+```sql
+CREATE TABLE unit_conversions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+    from_unit TEXT NOT NULL CHECK (length(trim(from_unit)) > 0),
+    to_unit TEXT NOT NULL CHECK (length(trim(to_unit)) > 0),
+    factor INTEGER NOT NULL CHECK (factor > 0),
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    UNIQUE(product_id, from_unit, to_unit),
+    CHECK(from_unit != to_unit)
+);
+CREATE INDEX idx_unit_conversions_product ON unit_conversions(product_id);
+```
 
-### How to add schema version 2 later
+### 4. `transactions`
+Commercial transactions (Sales and Purchases). Supports state machine: `draft` -> `confirmed` -> `reversed`.
+```sql
+CREATE TABLE transactions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    type TEXT NOT NULL CHECK (type IN ('sale', 'purchase')),
+    status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'confirmed', 'reversed')),
+    total_amount INTEGER NOT NULL DEFAULT 0 CHECK (total_amount >= 0),
+    payment_method TEXT NOT NULL DEFAULT 'cash' CHECK (payment_method IN ('cash', 'upi', 'credit')),
+    customer_id INTEGER REFERENCES customers(id),
+    original_instruction TEXT NOT NULL DEFAULT '',
+    idempotency_key TEXT UNIQUE,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    confirmed_at TEXT,
+    reversed_at TEXT
+);
+CREATE INDEX idx_transactions_type ON transactions(type);
+CREATE INDEX idx_transactions_status ON transactions(status);
+CREATE INDEX idx_transactions_created_at ON transactions(created_at);
+CREATE INDEX idx_transactions_customer ON transactions(customer_id);
+```
 
-1. Backup first (`python -m app.cli backup`).
-2. Add `MIGRATION_002_STATEMENTS` that only use `ALTER TABLE ... ADD COLUMN`, new tables, or new indexes.
-3. Raise `SCHEMA_VERSION` to 2.
-4. Apply inside a single connection so a failed migration rolls back.
-5. Never use `DROP TABLE` in a default migration.
-6. Add tests that start from a version 1 file and upgrade.
+### 5. `transaction_items`
+Individual line items inside transactions.
+```sql
+CREATE TABLE transaction_items (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    transaction_id INTEGER NOT NULL REFERENCES transactions(id) ON DELETE CASCADE,
+    product_id INTEGER NOT NULL REFERENCES products(id),
+    quantity INTEGER NOT NULL CHECK (quantity > 0),
+    unit TEXT NOT NULL CHECK (length(trim(unit)) > 0),
+    unit_price INTEGER NOT NULL CHECK (unit_price >= 0),
+    line_total INTEGER NOT NULL CHECK (line_total >= 0),
+    base_unit TEXT NOT NULL CHECK (length(trim(base_unit)) > 0),
+    base_quantity INTEGER NOT NULL CHECK (base_quantity > 0)
+);
+CREATE INDEX idx_tx_items_transaction ON transaction_items(transaction_id);
+CREATE INDEX idx_tx_items_product ON transaction_items(product_id);
+```
 
-## Runtime
+### 6. `inventory_movements`
+Immutable double-entry physical stock audit log.
+```sql
+CREATE TABLE inventory_movements (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    product_id INTEGER NOT NULL REFERENCES products(id),
+    transaction_id INTEGER REFERENCES transactions(id),
+    movement_type TEXT NOT NULL CHECK (movement_type IN (
+        'opening', 'sale', 'purchase', 'adjustment', 'reversal_in', 'reversal_out'
+    )),
+    quantity_change INTEGER NOT NULL,
+    stock_before INTEGER NOT NULL CHECK (stock_before >= 0),
+    stock_after INTEGER NOT NULL CHECK (stock_after >= 0),
+    notes TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX idx_movements_product ON inventory_movements(product_id);
+CREATE INDEX idx_movements_transaction ON inventory_movements(transaction_id);
+CREATE INDEX idx_movements_created_at ON inventory_movements(created_at);
+```
 
-`GET /api/health` does not open the database.
+### 7. `customers`
+Customer records for neighborhood Udhaar Khata.
+```sql
+CREATE TABLE customers (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL CHECK (length(trim(name)) > 0),
+    phone TEXT NOT NULL DEFAULT '',
+    address TEXT NOT NULL DEFAULT '',
+    credit_limit INTEGER NOT NULL DEFAULT 0 CHECK (credit_limit >= 0),
+    active INTEGER NOT NULL DEFAULT 1 CHECK (active IN (0, 1)),
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX idx_customers_name ON customers(name);
+CREATE INDEX idx_customers_phone ON customers(phone);
+CREATE INDEX idx_customers_active ON customers(active);
+```
 
-`GET /api/health/ready` opens the live file **read-only**, runs `SELECT 1`, and checks that schema version 1 and required tables are present. It does not create a database.
+### 8. `customer_ledger`
+Immutable debit/credit running ledger for customer balance derivations.
+```sql
+CREATE TABLE customer_ledger (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    customer_id INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+    transaction_id INTEGER REFERENCES transactions(id),
+    entry_type TEXT NOT NULL CHECK (entry_type IN ('credit_sale', 'payment', 'adjustment')),
+    amount INTEGER NOT NULL CHECK (amount > 0),
+    balance_after INTEGER NOT NULL,
+    payment_method TEXT,
+    notes TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX idx_customer_ledger_customer ON customer_ledger(customer_id);
+CREATE INDEX idx_customer_ledger_transaction ON customer_ledger(transaction_id);
+CREATE INDEX idx_customer_ledger_created ON customer_ledger(created_at);
+```
+
+### 9. `expenses`
+Operational expense register classified by drawer cash, UPI, and bank transfer.
+```sql
+CREATE TABLE expenses (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    expense_date TEXT NOT NULL,
+    category TEXT NOT NULL CHECK (length(trim(category)) > 0),
+    amount INTEGER NOT NULL CHECK (amount > 0),
+    payment_method TEXT NOT NULL CHECK (payment_method IN ('cash', 'upi', 'bank_transfer')),
+    notes TEXT NOT NULL DEFAULT '',
+    status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'reversed')),
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX idx_expenses_date ON expenses(expense_date);
+CREATE INDEX idx_expenses_category ON expenses(category);
+CREATE INDEX idx_expenses_payment_method ON expenses(payment_method);
+CREATE INDEX idx_expenses_status ON expenses(status);
+```
+
+### 10. `cash_closings`
+Daily cash drawer reconciliation and finalization lock records.
+```sql
+CREATE TABLE cash_closings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    business_date TEXT NOT NULL UNIQUE,
+    opening_cash INTEGER NOT NULL DEFAULT 0 CHECK (opening_cash >= 0),
+    cash_sales INTEGER NOT NULL DEFAULT 0 CHECK (cash_sales >= 0),
+    cash_repayments INTEGER NOT NULL DEFAULT 0 CHECK (cash_repayments >= 0),
+    cash_expenses INTEGER NOT NULL DEFAULT 0 CHECK (cash_expenses >= 0),
+    cash_refunds INTEGER NOT NULL DEFAULT 0 CHECK (cash_refunds >= 0),
+    expected_cash INTEGER NOT NULL,
+    actual_cash INTEGER NOT NULL CHECK (actual_cash >= 0),
+    difference INTEGER NOT NULL,
+    status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'finalized')),
+    notes TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    closed_at TEXT
+);
+CREATE INDEX idx_cash_closings_date ON cash_closings(business_date);
+CREATE INDEX idx_cash_closings_status ON cash_closings(status);
+```

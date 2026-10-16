@@ -17,6 +17,12 @@ export function UdhaarKhata() {
   const [activeCustomer, setActiveCustomer] = useState(null) // for Ledger modal
   const [paymentCustomer, setPaymentCustomer] = useState(null) // for Record Payment modal
   const [addCustomerOpen, setAddCustomerOpen] = useState(false)
+  const [statementCustomer, setStatementCustomer] = useState(null) // for Statement modal
+  const [statementData, setStatementData] = useState(null)
+  const [statementLoading, setStatementLoading] = useState(false)
+  const [statementFromDate, setStatementFromDate] = useState('')
+  const [statementToDate, setStatementToDate] = useState('')
+  const [statementCopied, setStatementCopied] = useState(false)
 
   // Payment form state
   const [paymentAmount, setPaymentAmount] = useState('')
@@ -83,6 +89,40 @@ export function UdhaarKhata() {
     setPaymentAmount('')
     setPaymentMode('cash')
     setPaymentNotes('')
+  }
+
+  const openStatementModal = (customer) => {
+    setStatementCustomer(customer)
+    setStatementFromDate('')
+    setStatementToDate('')
+    setStatementCopied(false)
+    loadStatement(customer.id, '', '')
+  }
+
+  const loadStatement = (customerId, fromDate, toDate) => {
+    setStatementLoading(true)
+    api
+      .getCustomerStatement(customerId, {
+        from_date: fromDate || undefined,
+        to_date: toDate || undefined,
+      })
+      .then((data) => {
+        setStatementData(data)
+      })
+      .catch((err) => {
+        setError(err.message || 'Failed to load customer statement.')
+      })
+      .finally(() => {
+        setStatementLoading(false)
+      })
+  }
+
+  const handleCopyWhatsApp = () => {
+    if (!statementData?.shareable_text) return
+    navigator.clipboard.writeText(statementData.shareable_text).then(() => {
+      setStatementCopied(true)
+      setTimeout(() => setStatementCopied(false), 3000)
+    })
   }
 
   const handleRecordPayment = async (e) => {
@@ -258,6 +298,13 @@ export function UdhaarKhata() {
                             onClick={() => openLedgerModal(c)}
                           >
                             📖 {t('udhaar.view_ledger')}
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-outline text-info"
+                            onClick={() => openStatementModal(c)}
+                          >
+                            📄 {t('udhaar.statement')}
                           </button>
                         </div>
                       </td>
@@ -577,6 +624,198 @@ export function UdhaarKhata() {
           </div>
         </div>
       )}
+
+      {/* Customer Statement Modal */}
+      {statementCustomer && (
+        <div className="modal-overlay" onClick={() => setStatementCustomer(null)}>
+          <div className="modal-card modal-lg" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>
+                📄 {statementCustomer.name} — {t('udhaar.statement')}
+              </h3>
+              <button
+                type="button"
+                className="close-button"
+                onClick={() => setStatementCustomer(null)}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Date filter bar */}
+            <div className="statement-filter-bar">
+              <div className="filter-item">
+                <label className="form-label">{t('reports.start_date')}</label>
+                <input
+                  type="date"
+                  className="form-control"
+                  value={statementFromDate}
+                  onChange={(e) => setStatementFromDate(e.target.value)}
+                />
+              </div>
+              <div className="filter-item">
+                <label className="form-label">{t('reports.end_date')}</label>
+                <input
+                  type="date"
+                  className="form-control"
+                  value={statementToDate}
+                  onChange={(e) => setStatementToDate(e.target.value)}
+                />
+              </div>
+              <div className="filter-actions">
+                <button
+                  type="button"
+                  className="btn btn-outline"
+                  onClick={() =>
+                    loadStatement(statementCustomer.id, statementFromDate, statementToDate)
+                  }
+                  disabled={statementLoading}
+                >
+                  {statementLoading ? '...' : t('common.filter')}
+                </button>
+                {(statementFromDate || statementToDate) && (
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-ghost"
+                    onClick={() => {
+                      setStatementFromDate('')
+                      setStatementToDate('')
+                      loadStatement(statementCustomer.id, '', '')
+                    }}
+                  >
+                    {t('common.reset')}
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {statementLoading ? (
+              <div className="loading-state">
+                <span className="spinner" /> {t('common.loading')}
+              </div>
+            ) : statementData ? (
+              <div className="statement-content">
+                {/* 4 Summary Metric Cards */}
+                <div className="statement-summary-grid">
+                  <div className="stat-card">
+                    <span className="stat-label">{t('udhaar.opening_balance')}</span>
+                    <span className="stat-value">
+                      ₹{paiseToRupees(statementData.opening_balance)}
+                    </span>
+                  </div>
+                  <div className="stat-card">
+                    <span className="stat-label">{t('udhaar.total_credit_sales')}</span>
+                    <span className="stat-value text-danger">
+                      +₹{paiseToRupees(statementData.total_debit)}
+                    </span>
+                  </div>
+                  <div className="stat-card">
+                    <span className="stat-label">{t('udhaar.total_payments')}</span>
+                    <span className="stat-value text-success">
+                      -₹{paiseToRupees(statementData.total_credit)}
+                    </span>
+                  </div>
+                  <div className="stat-card stat-card-highlight">
+                    <span className="stat-label">{t('udhaar.closing_balance')}</span>
+                    <span className="stat-value text-warning">
+                      ₹{paiseToRupees(statementData.closing_balance)}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Ledger Entries Table */}
+                <div className="statement-table-wrapper">
+                  <table className="data-table">
+                    <thead>
+                      <tr>
+                        <th>{t('common.date')}</th>
+                        <th>{t('common.type')}</th>
+                        <th>{t('common.description')}</th>
+                        <th className="text-right">{t('udhaar.debit')} (+)</th>
+                        <th className="text-right">{t('udhaar.credit')} (-)</th>
+                        <th className="text-right">{t('udhaar.balance')}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {statementData.entries.length === 0 ? (
+                        <tr>
+                          <td colSpan="6" className="text-center text-muted">
+                            {t('udhaar.no_entries_in_period')}
+                          </td>
+                        </tr>
+                      ) : (
+                        statementData.entries.map((entry) => (
+                          <tr key={entry.id}>
+                            <td>{entry.date ? entry.date.split('T')[0] : '-'}</td>
+                            <td>
+                              <span
+                                className={`badge ${
+                                  entry.entry_type === 'credit_sale'
+                                    ? 'badge-warning'
+                                    : entry.entry_type === 'payment'
+                                    ? 'badge-success'
+                                    : 'badge-secondary'
+                                }`}
+                              >
+                                {entry.entry_type === 'credit_sale'
+                                  ? t('udhaar.badge_credit')
+                                  : entry.entry_type === 'payment'
+                                  ? t('udhaar.badge_payment')
+                                  : t('udhaar.badge_adjustment')}
+                              </span>
+                            </td>
+                            <td>{entry.description}</td>
+                            <td className="text-right text-danger font-mono">
+                              {entry.debit > 0 ? `+₹${paiseToRupees(entry.debit)}` : '—'}
+                            </td>
+                            <td className="text-right text-success font-mono">
+                              {entry.credit > 0 ? `-₹${paiseToRupees(entry.credit)}` : '—'}
+                            </td>
+                            <td className="text-right font-bold font-mono">
+                              ₹{paiseToRupees(entry.balance_after)}
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Shareable Summary Box preview */}
+                <div className="statement-share-preview">
+                  <pre>{statementData.shareable_text}</pre>
+                </div>
+              </div>
+            ) : null}
+
+            <div className="modal-actions statement-actions">
+              <button
+                type="button"
+                className="btn btn-success"
+                onClick={handleCopyWhatsApp}
+                disabled={!statementData}
+              >
+                📲 {statementCopied ? t('udhaar.copied') : t('udhaar.copy_whatsapp')}
+              </button>
+              <button
+                type="button"
+                className="btn btn-outline"
+                onClick={() => window.print()}
+              >
+                🖨️ {t('udhaar.print_statement')}
+              </button>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => setStatementCustomer(null)}
+              >
+                ✕ {t('common.close')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
+

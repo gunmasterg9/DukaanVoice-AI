@@ -97,3 +97,30 @@ class CustomerLedgerEntryResponse(BaseModel):
 
 class CustomerDetailResponse(CustomerResponse):
     ledger: List[CustomerLedgerEntryResponse] = []
+
+
+class CustomerStatementEntry(BaseModel):
+    id: int
+    date: str
+    entry_type: str  # credit_sale, payment, adjustment
+    description: str
+    debit: int  # in paise (increases balance owed by customer)
+    credit: int  # in paise (decreases balance owed by customer)
+    balance_after: int  # in paise
+    payment_method: Optional[str] = None
+    notes: str
+
+
+class CustomerStatementResponse(BaseModel):
+    customer_id: int
+    customer_name: str
+    customer_phone: str
+    from_date: Optional[str] = None
+    to_date: Optional[str] = None
+    opening_balance: int  # in paise
+    total_debit: int  # total credit sales in period in paise
+    total_credit: int  # total payments/reversals in period in paise
+    closing_balance: int  # final balance in paise
+    entries: List[CustomerStatementEntry]
+    shareable_text: str  # WhatsApp/SMS ready formatted summary
+

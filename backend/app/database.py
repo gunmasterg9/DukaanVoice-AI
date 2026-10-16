@@ -12,6 +12,7 @@ from app.schema import (
     MIGRATION_001_STATEMENTS,
     MIGRATION_002_STATEMENTS,
     MIGRATION_003_STATEMENTS,
+    MIGRATION_004_STATEMENTS,
     REQUIRED_TABLES,
     SCHEMA_VERSION,
     SchemaError,
@@ -131,6 +132,17 @@ def initialize_schema(database_path: str | Path | None = None) -> dict[str, obje
             )
             conn.commit()
             version = 3
+
+        if int(version) == 3:
+            conn.commit()
+            for statement in MIGRATION_004_STATEMENTS:
+                conn.execute(statement)
+            conn.execute(
+                "INSERT INTO schema_migrations (version, name) VALUES (?, ?)",
+                (4, "004_expenses_and_cash_closing"),
+            )
+            conn.commit()
+            version = 4
 
         if int(version) < SCHEMA_VERSION:
             raise SchemaError(

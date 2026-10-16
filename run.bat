@@ -3,7 +3,8 @@ setlocal
 title DukaanVoice AI Launcher
 
 echo ============================================================
-echo   DukaanVoice AI - Gujarati-first Digital Shop Register
+echo   DukaanVoice AI - Multilingual Digital Shop Register
+echo   (English + 22 Scheduled Indian Languages)
 echo ============================================================
 echo.
 

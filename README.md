@@ -1,46 +1,67 @@
 # DukaanVoice AI
-**Multilingual Smart Shop Register (22 Scheduled Indian Languages + English)**
+**Smart Multilingual POS & Ledger for Indian Kirana & Neighborhood Retailers**
 
-DukaanVoice AI is a local-first shop management application designed to simplify inventory, sales, purchases, and ledger reconciliation for small retailers across India.
+DukaanVoice AI is an ultra-fast, local-first retail register, inventory management, and credit ledger system designed specifically for the daily operational workflows of Indian neighborhood shops (kirana, provision, general stores).
 
-**Project goal:** Make reliable digital shop management accessible to retailers in their own mother tongue across all 22 constitutionally scheduled Indian languages, with a Gujarati-first baseline and extensible architecture.
-
----
-
-### Key Features
-- **Multilingual Interface:** Full support for all 22 Eighth Schedule Indian languages plus English with native script rendering.
-- **RTL Script Support:** Bidirectional layout engine for Perso-Arabic scripts (Urdu, Kashmiri, Sindhi).
-- **Product Management:** Product registration, SKU uniqueness, search, category filtering, and stock management.
-- **Sales & Purchase Workflows:** Draft creation with live line estimation and explicit atomic confirmation.
-- **Auditable Stock Ledger:** Automatic inventory updates and auditable stock movements (`inventory_movements`).
-- **Data Safety:** Transaction reversal safeguards, idempotency protection, and unit conversion support.
-- **Business Reports:** Daily sales and purchase expenditure breakdown.
-- **Product Analytics:** Product-wise sales analysis in base units and inventory valuation (cost & selling value).
-- **Inventory Reconciliation:** Mathematical stock ledger reconciliation to identify stock discrepancies and audit gaps.
-- **Natural Command Bar:** Typed natural-language queries in Indian languages with strict draft-only guardrails.
-- **Modular Voice Readiness:** Prepared architecture separating ASR, language identification, intent parsing, and TTS.
-- **Full-Stack Architecture:** React + Vite frontend with FastAPI backend and SQLite database.
+It empowers retailers to manage sales, customer credit (*Udhaar Khata*), daily cash drawer reconciliation, operating expenses, and inventory audits in their own mother tongue across **all 22 constitutionally scheduled Indian languages** plus English.
 
 ---
 
-### Implementation Status
-- **Phase 1 (Foundation):** Safe SQLite schema v1, FastAPI health/readiness checks, backup/restore CLI.
-- **Phase 2 (Product Catalog):** Complete product CRUD, unit conversions, and low-stock indicators.
-- **Phase 3 (Transactions):** Sales and purchase drafts, atomic confirmation, and compensating reversals.
-- **Phase 4 (Reports & Reconciliation):** Daily sales analytics, purchase ledger, inventory valuation, and mathematical ledger continuity reconciliation.
-- **Phase 5 (Multilingual India Expansion):** 22 Indian scheduled languages + English dictionaries, LanguageSelector with native names, RTL layout engine, command parser with confirmation guardrails, and automated test suite.
+## 🌟 Key Features
+
+### 🛒 1. Quick Sale POS
+- **Rapid Item Search:** Instant product lookup by name or barcode/SKU with instant cart additions.
+- **Kirana-Friendly Units:** Full support for count-based units (*piece, packet, bottle*) and weight/volume units (*kg, gram, litre, ml*) with exact integer conversion.
+- **Review Guardrail:** Clear confirmation modal displaying line items, quantities, and totals before committing inventory.
+- **Multi-Tender Payments:** Record tender as **Cash**, **UPI** (cashier-recorded digital receipt), or **Credit (Udhaar)**.
+- **Atomic Confirmation:** Inventory is deducted atomically upon confirmation using SQLite database transactions.
+- **Thermal Receipts:** Print-ready 80mm POS and A4 receipts showing shop branding, tax, and customer balances.
+
+### 📖 2. Customer Udhaar Khata (Credit Ledger)
+- **Customer Balance Tracking:** Outstanding balances derived from immutable transaction ledger rows.
+- **Credit Sales & Repayments:** Directly record credit sales from POS and collect partial/full repayments via Cash or UPI.
+- **Customer Statements:** Date-filtered statement breakdown showing opening balance, debits, credits, and closing balance.
+- **WhatsApp-Ready Sharing:** One-click copy for pre-formatted, localized WhatsApp balance reminders to send to customers.
+- **Printable Statements:** Clean print layout for formal customer billing records.
+
+### 💵 3. Daily Cash Closing & Drawer Reconciliation
+- **Drawer Balance Calculation:**
+  $$\text{Expected Closing Cash} = \text{Opening Cash} + \text{Cash Sales} + \text{Cash Repayments} - \text{Cash Expenses} - \text{Cash Refunds}$$
+- **Physical Cash Counting:** Enter actual physical currency counted in the cash drawer.
+- **Difference Tracking:** Visual indicators for balanced, surplus, or shortage drawers with required explanatory notes.
+- **Audit Locking:** Finalize and permanently lock the day's closing record to prevent retroactive tampering.
+- **Strict Cash Boundary:** Excludes UPI and credit sales from physical drawer calculations.
+
+### 📊 4. Shop Expense Register
+- **Categorized Outlays:** Track daily operating expenses (Shop Rent, Electricity, Transport, Staff Wages, Packaging, Tea/Refreshments, Maintenance, Miscellaneous).
+- **Payment Method Classification:** Distinguishes cash-paid outlays (drawer-affecting) from bank transfers/UPI.
+- **Compensating Reversals:** Auditable reversal mechanism that preserves complete historical ledger records.
+
+### 🌐 5. True Pan-India Multilingual Support (22 Scheduled Languages + English)
+- **100% Key Parity:** Full UI coverage across English and all 22 Eighth Schedule Indian languages:
+  *Assamese, Bengali, Bodo, Dogri, Gujarati, Hindi, Kannada, Kashmiri, Konkani, Maithili, Malayalam, Manipuri, Marathi, Nepali, Odia, Punjabi, Sanskrit, Santali, Sindhi, Tamil, Telugu, and Urdu.*
+- **RTL Script Support:** Bidirectional horizontal mirroring for Perso-Arabic scripts (*Urdu, Kashmiri, Sindhi*).
+- **Graceful Fallback:** Automatically falls back to English for any missing translation key without crashing.
+
+### 📦 6. Simplified Product Catalog with Optional SKU
+- **Zero-Friction Entry:** Products only require a Name, Selling Price, and Opening Stock. SKU is strictly optional.
+- **Barcode Compatibility:** If an SKU/barcode is entered, uniqueness is strictly enforced.
+- **Stock Audit Movements:** Every inventory change is recorded in an immutable `inventory_movements` log.
+
+### 🔒 7. Financial & Inventory Accounting Integrity
+- **Integer Paise Representation:** All money amounts are stored and calculated as integers in paise (`100 paise = ₹1.00`), eliminating floating-point rounding errors.
+- **Integer Milli-Unit Stock:** Inventory quantities are stored as integer milli-units (`1000 milli-units = 1 base unit`).
+- **Mathematical Continuity Reconciliation:** Built-in audit report verifying $\text{Opening} + \text{Purchased} - \text{Sold} \pm \text{Adjustments} = \text{Current Stock}$ for every single item.
 
 ---
 
-## Supported Indian Languages (8th Schedule)
-
-DukaanVoice AI includes centralized translation dictionaries for all 22 scheduled Indian languages plus English:
+## 🏛️ Supported Indian Languages (8th Schedule)
 
 | # | Code | Language | Native Name | Script | Direction | Primary Region |
 |---|---|---|---|---|---|---|
 | 1 | `gu` | Gujarati (Default) | ગુજરાતી | Gujarati | LTR | Gujarat |
 | 2 | `hi` | Hindi | हिन्दी | Devanagari | LTR | North & Central India |
-| 3 | `en` | English (Fallback) | English | Latin | LTR | Pan-India / International |
+| 3 | `en` | English (Fallback) | English | Latin | LTR | Pan-India / Global |
 | 4 | `as` | Assamese | অসমীয়া | Bengali-Assamese | LTR | Assam |
 | 5 | `bn` | Bengali | বাংলা | Bengali | LTR | West Bengal, Tripura |
 | 6 | `brx` | Bodo | बड़ो | Devanagari | LTR | Bodoland / Assam |
@@ -64,131 +85,46 @@ DukaanVoice AI includes centralized translation dictionaries for all 22 schedule
 
 ---
 
-## How to Change the Language
+## 💻 Tech Stack & Architecture
 
-1. Click the **Language Selector** button in the top right header (globe icon displaying the active native language).
-2. Type in the search box to filter languages by English name or native script.
-3. Click any language to apply it instantly across the application.
-4. Your choice is automatically persisted in `localStorage['dukaanvoice_locale']` across sessions.
-5. If any localized key is missing, the system gracefully falls back to English without crashing.
-
-### RTL (Right-to-Left) Script Support
-When switching to **Urdu** (`ur`), **Kashmiri** (`ks`), or **Sindhi** (`sd`):
-- `document.documentElement.dir` is dynamically set to `rtl`.
-- Navigation, headers, toolbars, tables, and modal actions automatically mirror horizontally.
-- Font stack prioritizes native Windows `Nirmala UI`, `Segoe UI`, and `Noto Sans` for crisp rendering.
+- **Frontend:** React 18, Vite 6, Vanilla CSS (dynamic dark/light design system with HSL tokens, glassmorphism, RTL engine).
+- **Backend:** FastAPI, Python 3.12, Pydantic v2, Uvicorn.
+- **Database:** SQLite 3 (WAL mode, parameterized SQL, Schema Version 4).
+- **Operating System:** Windows 10/11 local-first workstation.
+- **Default Local URLs:**
+  - Frontend: `http://127.0.0.1:5173`
+  - Backend API: `http://127.0.0.1:8000` (Interactive docs: `http://127.0.0.1:8000/docs`)
+- **Database Storage Path:** `backend/data/dukaanvoice.db`
 
 ---
 
-## Language-Aware Command Bar & Safety Guardrails
+## 🚀 Quick Start (Windows Single-Click)
 
-The interactive Command Bar allows shopkeepers to type natural queries in Indian languages:
+The simplest way to start and stop DukaanVoice AI on Windows:
 
-- **Stock queries:** e.g., `stock chai`, `સ્ટોક ચા` (Gujarati), `चावल का स्टॉक` (Hindi), `இருப்பு டீ` (Tamil).
-- **Daily sales summaries:** e.g., `today sales`, `આજનું વેચાણ`, `आज की बिक्री`, `இன்றைய விற்பனை`.
-- **Transaction drafting:** e.g., `sell 2 kg rice`, `વેચાણ 5 કિલો ચોખા`.
+1. **Start the application:**  
+   Double-click `run.bat` (or `start.bat`).  
+   - Automatically validates Python and Node.js prerequisites.
+   - Non-destructively runs schema migrations if needed.
+   - Starts the FastAPI backend on port 8000 and Vite frontend on port 5173.
+   - Automatically opens `http://127.0.0.1:5173` in your default browser.
 
-### Strict Safety Guardrails (Phase 3 & 4 Protection)
-> [!IMPORTANT]
-> **Deterministic Guardrail:** Natural language text input **NEVER** directly confirms a transaction, alters stock balances, or executes database updates.
-> - Transaction requests create a **Draft only** with `status: 'draft'` via `api.createTransactionDraft(...)`.
-> - The shopkeeper must explicitly review products, quantities, units, and estimated totals, and click **"Confirm & Update Inventory"** to commit changes atomically.
-> - The backend remains the sole authoritative source of truth for stock quantities (integer milli-units) and monetary balances (integer paise).
-
----
-
-## Modular Voice Readiness Architecture
-
-The voice architecture is structured into four decoupled layers for future offline/online expansion:
-
-```
-[1. Speech-to-Text (ASR)]  ──►  [2. Language Identification (LID)]
-           │                                   │
-           ▼                                   ▼
-[3. Intent Parser (Deterministic)] ◄───  [Normalized Query]
-           │
-           ▼
-[Draft Creation / Read Query]
-           │
-           ▼
-[4. Text-to-Speech (TTS)]  ──►  Audible Shopkeeper Feedback
-```
-
-### Local / Offline Model Benchmark Analysis
-Before deploying heavy neural models on low-resource retail POS machines, open-source options were analyzed:
-
-| Option | Architecture | Model Size | RAM/VRAM | Languages Covered | Latency (CPU) | Offline Capability |
-|---|---|---|---|---|---|---|
-| **WebSpeech API (Current)** | Browser Native | 0 MB | 0 MB | Varies by OS/Browser | < 300ms | Depends on browser engine |
-| **Whisper.cpp (Tiny/Base)** | Quantized Transformer | 75–145 MB | ~500 MB RAM | English, Hindi + major Indic | 1.2–2.5s | 100% Offline |
-| **AI4Bharat IndicASR** | Conformer-CTC | 350 MB | ~1.5 GB RAM | 22 Scheduled Languages | 1.5–3.0s | 100% Offline (PyTorch) |
-| **Sherpa-ONNX / Vosk** | Kaldi / RNN-T | 40–100 MB | ~300 MB RAM | Select Indic languages | < 800ms | 100% Offline |
-
-*Decision:* WebSpeech API is used as the non-blocking zero-download baseline with clean fallback to typed commands. Large weights (>500MB) are intentionally excluded from the core repository to keep the application lightweight, local-first, and immediately deployable.
+2. **Stop the application:**  
+   Double-click `stop.bat`.  
+   - Terminates the background service process tree.
+   - Frees ports 8000 and 5173 cleanly.
 
 ---
 
-## Language Coverage Matrix
+## 🛠️ Manual Installation & Launch
 
-| Locale | Code | Interface Translated | UI Automated Tested | Text Commands Tested | Speech Recognition (ASR) | Speech Synthesis (TTS) |
-|---|---|---|---|---|---|---|
-| Gujarati | `gu` | Verified (100%) | Verified | Verified | WebSpeech ready | WebSpeech ready |
-| Hindi | `hi` | Verified (100%) | Verified | Verified | WebSpeech ready | WebSpeech ready |
-| English | `en` | Verified (100%) | Verified | Verified | WebSpeech ready | WebSpeech ready |
-| Assamese | `as` | Verified (100%) | Verified | Extensible | WebSpeech ready | WebSpeech ready |
-| Bengali | `bn` | Verified (100%) | Verified | Verified | WebSpeech ready | WebSpeech ready |
-| Bodo | `brx` | Verified (100%) | Verified | Extensible | WebSpeech ready | WebSpeech ready |
-| Dogri | `doi` | Verified (100%) | Verified | Extensible | WebSpeech ready | WebSpeech ready |
-| Kannada | `kn` | Verified (100%) | Verified | Extensible | WebSpeech ready | WebSpeech ready |
-| Kashmiri | `ks` | Verified (100% RTL) | Verified | Extensible | WebSpeech ready | WebSpeech ready |
-| Konkani | `kok` | Verified (100%) | Verified | Extensible | WebSpeech ready | WebSpeech ready |
-| Maithili | `mai` | Verified (100%) | Verified | Extensible | WebSpeech ready | WebSpeech ready |
-| Malayalam | `ml` | Verified (100%) | Verified | Extensible | WebSpeech ready | WebSpeech ready |
-| Manipuri | `mni` | Verified (100%) | Verified | Extensible | WebSpeech ready | WebSpeech ready |
-| Marathi | `mr` | Verified (100%) | Verified | Extensible | WebSpeech ready | WebSpeech ready |
-| Nepali | `ne` | Verified (100%) | Verified | Extensible | WebSpeech ready | WebSpeech ready |
-| Odia | `or` | Verified (100%) | Verified | Extensible | WebSpeech ready | WebSpeech ready |
-| Punjabi | `pa` | Verified (100%) | Verified | Extensible | WebSpeech ready | WebSpeech ready |
-| Sanskrit | `sa` | Verified (100%) | Verified | Extensible | WebSpeech ready | WebSpeech ready |
-| Santali | `sat` | Verified (100%) | Verified | Extensible | WebSpeech ready | WebSpeech ready |
-| Sindhi | `sd` | Verified (100% RTL) | Verified | Extensible | WebSpeech ready | WebSpeech ready |
-| Tamil | `ta` | Verified (100%) | Verified | Verified | WebSpeech ready | WebSpeech ready |
-| Telugu | `te` | Verified (100%) | Verified | Extensible | WebSpeech ready | WebSpeech ready |
-| Urdu | `ur` | Verified (100% RTL) | Verified | Extensible | WebSpeech ready | WebSpeech ready |
+### Prerequisites
+- Python 3.12+
+- Node.js 20+ (with `npm.cmd` on Windows)
 
----
-
-## Future Language Expansion Process
-
-Adding support for an additional language (e.g., Bhojpuri, Marwari, Tulu) takes 3 simple steps:
-
-1. **Register metadata** in `frontend/src/i18n/locales.js`:
-   ```javascript
-   { code: 'bho', name: 'भोजपुरी', englishName: 'Bhojpuri', nativeName: 'भोजपुरी', dir: 'ltr', script: 'Devanagari', region: 'Bihar / UP' }
-   ```
-2. **Create dictionary** `frontend/src/i18n/translations/bho.js` conforming to the section structure (`app`, `nav`, `common`, `dashboard`, `products`, `transactions`, `reports`).
-3. **Export in index** `frontend/src/i18n/translations/index.js`.
-4. Run `npm test` — the automated test suite will automatically discover and validate the new locale for key completeness and fallback safety!
-
----
-
-## Layout
-
-- `backend/` — FastAPI application (`app/`), tests, virtual environment
-- `frontend/` — React + Vite UI, i18n dictionaries, command parser
-- `docs/` — schema and backup documentation
-- Shop data default path: `backend/data/dukaanvoice.db`
-
-## Prerequisites (Windows PowerShell)
-
-- Python 3.12
-- Node.js 24 and `npm.cmd` (use the `.cmd` shims if PowerShell blocks `.ps1` scripts)
-- Do not change the PowerShell execution policy for this project
-
-## Backend Setup
-
+### 1. Backend Setup
 ```powershell
-cd "C:\Users\RAHUL\Desktop\gautam\DukaanVoice AI\backend"
+cd "backend"
 python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install --upgrade pip
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
@@ -196,69 +132,115 @@ Copy-Item .env.example .env
 .\.venv\Scripts\python.exe -m app.cli init-db
 ```
 
-## Frontend Setup
-
+### 2. Frontend Setup
 ```powershell
-cd "C:\Users\RAHUL\Desktop\gautam\DukaanVoice AI\frontend"
+cd "..\frontend"
 npm.cmd install
 Copy-Item .env.example .env
 ```
 
-## Quick Start (Windows Batch Files)
+### 3. Launch Services (Two Terminals)
+- **Terminal 1 (Backend):**
+  ```powershell
+  cd "backend"
+  .\.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000
+  ```
+- **Terminal 2 (Frontend):**
+  ```powershell
+  cd "frontend"
+  npm.cmd run dev
+  ```
 
-- **Start application:** Double-click `run.bat` (or `start.bat`).
-  - Launches Backend API on `http://127.0.0.1:8000` (docs at `/docs`).
-  - Launches Frontend UI on `http://127.0.0.1:5173`.
-  - Automatically opens the web app in your default browser.
-- **Stop application:** Double-click `stop.bat`.
-  - Gracefully terminates processes and frees ports 8000 and 5173.
+---
 
-## Manual Run (Two PowerShell Terminals)
+## 🧪 Automated Testing & Verification
 
-Terminal 1 — API:
-```powershell
-cd "C:\Users\RAHUL\Desktop\gautam\DukaanVoice AI\backend"
-.\.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000
-```
-
-Terminal 2 — UI:
-```powershell
-cd "C:\Users\RAHUL\Desktop\gautam\DukaanVoice AI\frontend"
-npm.cmd run dev
-```
-
-## Tests and Verification
+DukaanVoice AI includes comprehensive test suites across backend, frontend, and static analysis:
 
 ```powershell
-# Backend automated test suite (55 tests)
-cd "C:\Users\RAHUL\Desktop\gautam\DukaanVoice AI\backend"
-.\.venv\Scripts\python.exe -m pytest
+# 1. Backend test suite (70 tests - 100% pass)
+cd backend
+.\.venv\Scripts\pytest.exe -v
 
-# Frontend automated test suite (48 tests)
-cd "C:\Users\RAHUL\Desktop\gautam\DukaanVoice AI\frontend"
+# 2. Frontend i18n & translation parity tests (49 tests - 100% pass)
+cd ..\frontend
 npm.cmd test
 
-# Frontend linter (0 errors, 0 warnings)
+# 3. Frontend static analysis & linting (0 warnings, 0 errors)
 npx.cmd oxlint
 
-# Production bundle build
+# 4. Production build compilation (529ms)
 npm.cmd run build
+
+# 5. Full 10-step shop lifecycle simulation
+python ..\scratch\e2e_verification.py
 ```
 
-## Backup and Restore
+---
 
-See `docs/BACKUP_RESTORE.md`. Quick commands:
+## 📁 Project Structure
 
-```powershell
-cd "C:\Users\RAHUL\Desktop\gautam\DukaanVoice AI\backend"
-.\.venv\Scripts\python.exe -m app.cli backup
-.\.venv\Scripts\python.exe -m app.cli restore --backup "backups\dukaanvoice-YYYYMMDDTHHMMSSZ.db" --destination "data\dukaanvoice-restored.db"
+```
+DukaanVoice AI/
+├── backend/
+│   ├── app/
+│   │   ├── database.py         # SQLite connection & WAL configuration
+│   │   ├── main.py             # FastAPI app initialization & router registration
+│   │   ├── schema.py           # Additive Schema v1 -> v4 migration engine
+│   │   ├── routers/
+│   │   │   ├── cash_closing.py # Daily cash closing & reconciliation endpoints
+│   │   │   ├── customers.py    # Customer Udhaar Khata & statement endpoints
+│   │   │   ├── expenses.py     # Expense register & category summary endpoints
+│   │   │   ├── products.py     # Product CRUD & stock adjustment endpoints
+│   │   │   ├── reports.py      # Business reports & mathematical reconciliation
+│   │   │   └── transactions.py # POS sales, purchase drafts & atomic confirmation
+│   │   └── schemas/            # Pydantic v2 request/response models
+│   ├── data/                   # Local SQLite storage (dukaanvoice.db)
+│   ├── backups/                # Non-blocking SQLite online backup files
+│   └── tests/                  # 70 Pytest unit and integration tests
+├── frontend/
+│   ├── src/
+│   │   ├── App.jsx             # Top-level navigation & tab layout
+│   │   ├── index.css           # Modern design system, HSL tokens, dark mode, RTL
+│   │   ├── components/
+│   │   │   ├── CashClosing.jsx # Cash drawer reconciliation & locking UI
+│   │   │   ├── Expenses.jsx    # Expense entry, filtering, and reversal UI
+│   │   │   ├── QuickSale.jsx   # Fast POS billing, cart, and thermal receipts
+│   │   │   ├── UdhaarKhata.jsx # Customer credit, repayments, statement & WhatsApp
+│   │   │   ├── Products.jsx    # Catalog management with optional SKU
+│   │   │   └── Reports.jsx     # Sales analytics & inventory reconciliation
+│   │   ├── i18n/               # 23 Translation dictionaries & language selector
+│   │   └── services/           # Axios API client & command parser
+│   ├── package.json
+│   └── vite.config.js
+├── docs/
+│   ├── FINAL_QA_REPORT.md      # Comprehensive QA audit, metrics, and sign-off
+│   ├── RELEASE_NOTES.md        # Feature highlights and release details
+│   ├── KNOWN_LIMITATIONS.md    # Transparent documentation of operational limits
+│   ├── DEMO_SCRIPT.md          # 5-minute step-by-step evaluator walkthrough
+│   ├── DATABASE_SCHEMA.md      # Schema v4 documentation and table definitions
+│   └── BACKUP_RESTORE.md       # Backup and disaster recovery procedures
+├── run.bat                     # Windows one-click start script
+├── start.bat                   # Alias for run.bat
+└── stop.bat                    # Windows one-click stop script
 ```
 
-## Safety Rules
+---
 
-- The API binds to `127.0.0.1` by default and is not shared on the LAN.
-- CORS is limited to the configured development origins.
-- Schema initialization never drops tables or deletes a database file.
-- SQL used by the app is parameterized. There is no AI layer and no generated SQL.
-- Changing languages never mutates stored products, prices, or inventory logs.
+## 🔒 Security & Data Safety Principles
+
+1. **Zero Cloud Requirement:** Designed as a self-contained local-first application. No shop data is sent to external cloud servers.
+2. **Local Host Bounding:** FastAPI binds exclusively to `127.0.0.1` by default; it is not exposed to external public networks without explicit configuration.
+3. **Audit Trails & Compensating Reversals:** Transactions and expenses cannot be hard-deleted; reversals create explicit compensating records to preserve historical integrity.
+4. **Closing Lock:** Finalized daily cash closings are permanently locked against tampering.
+5. **Database Backups:** Safe online backups can be created at any time without locking active retail transactions (`docs/BACKUP_RESTORE.md`).
+
+---
+
+## 📜 Documentation Links
+- [Final QA Report](docs/FINAL_QA_REPORT.md)
+- [Release Notes](docs/RELEASE_NOTES.md)
+- [Known Limitations](docs/KNOWN_LIMITATIONS.md)
+- [Evaluator Demo Script](docs/DEMO_SCRIPT.md)
+- [Database Schema v4](docs/DATABASE_SCHEMA.md)
+- [Backup & Restore Guide](docs/BACKUP_RESTORE.md)

@@ -8,7 +8,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from app import __version__
 from app.config import get_settings
 from app.database import initialize_schema
-from app.routers import customers, health, products, reports, transactions
+from app.routers import (
+    cash_closing,
+    customers,
+    expenses,
+    health,
+    products,
+    reports,
+    transactions,
+)
 
 
 @asynccontextmanager
@@ -22,7 +30,7 @@ def create_app() -> FastAPI:
     application = FastAPI(
         title="DukaanVoice AI",
         version=__version__,
-        description="Gujarati-first shop register — Phase 4 reports and inventory reconciliation.",
+        description="Local-first Kirana register with Multilingual Voice AI, Udhaar Khata, Expenses & Cash Closing.",
         lifespan=lifespan,
     )
     application.add_middleware(
@@ -37,7 +45,10 @@ def create_app() -> FastAPI:
     application.include_router(transactions.router)
     application.include_router(reports.router)
     application.include_router(customers.router)
+    application.include_router(expenses.router)
+    application.include_router(cash_closing.router)
     return application
+
 
 
 app = create_app()

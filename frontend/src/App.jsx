@@ -6,6 +6,8 @@ import { QuickSale } from './components/QuickSale'
 import { UdhaarKhata } from './components/UdhaarKhata'
 import { Transactions } from './components/Transactions'
 import { Reports } from './components/Reports'
+import { Expenses } from './components/Expenses'
+import { CashClosing } from './components/CashClosing'
 import { CommandBar } from './components/CommandBar'
 import { LanguageSelector } from './i18n/LanguageSelector'
 import { useI18n } from './i18n/I18nContext'
@@ -24,6 +26,8 @@ function App() {
     { id: 'products', label: t('nav.products') },
     { id: 'transactions', label: t('nav.transactions') },
     { id: 'udhaar_khata', label: `📒 ${t('nav.udhaar_khata')}` },
+    { id: 'expenses', label: `💸 ${t('nav.expenses')}` },
+    { id: 'cash_closing', label: `🔒 ${t('nav.cash_closing')}` },
     { id: 'reports', label: t('nav.reports') },
   ]
 
@@ -213,6 +217,8 @@ function App() {
         {activePage === 'products' && <Products />}
         {activePage === 'transactions' && <Transactions />}
         {activePage === 'udhaar_khata' && <UdhaarKhata />}
+        {activePage === 'expenses' && <Expenses />}
+        {activePage === 'cash_closing' && <CashClosing />}
         {activePage === 'reports' && <Reports />}
       </main>
     </div>

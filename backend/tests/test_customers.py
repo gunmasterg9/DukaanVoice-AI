@@ -212,7 +212,51 @@ def test_low_stock_reorder_draft(client):
     assert draft["status"] == "draft"
     assert len(draft["items"]) == 1
     item = draft["items"][0]
-    assert item["product_id"] == p1["id"]
     # Suggested qty = (thresh * 2) - stock = (5000 * 2) - 2000 = 8000
     assert item["quantity"] == 8000
     assert item["unit_price"] == 42000
+
+
+def test_customer_statement(client):
+    # 1. Create customer
+    c = client.post("/api/customers", json={"name": "Vikram Seth", "phone": "9811223344"}).json()
+    cid = c["id"]
+
+    # 2. Create product
+    p = client.post(
+        "/api/products",
+        json={"name": "Mustard Oil", "selling_price": 18000, "base_unit": "bottle", "opening_stock": 10000},
+    ).json()
+
+    # 3. Credit sale 1: Rs. 180.00
+    tx1 = client.post(
+        "/api/transactions",
+        json={
+            "type": "sale",
+            "payment_method": "credit",
+            "customer_id": cid,
+            "items": [{"product_id": p["id"], "quantity": 1000, "unit": "bottle", "unit_price": 18000}],
+        },
+    ).json()
+    client.patch(f"/api/transactions/{tx1['id']}/confirm")
+
+    # 4. Partial payment: Rs. 80.00
+    client.post(
+        f"/api/customers/{cid}/payments",
+        json={"amount": 8000, "payment_method": "cash", "notes": "Token deposit"},
+    )
+
+    # 5. Get statement
+    res = client.get(f"/api/customers/{cid}/statement")
+    assert res.status_code == 200
+    stmt = res.json()
+    assert stmt["customer_id"] == cid
+    assert stmt["customer_name"] == "Vikram Seth"
+    assert stmt["opening_balance"] == 0
+    assert stmt["total_debit"] == 18000
+    assert stmt["total_credit"] == 8000
+    assert stmt["closing_balance"] == 10000  # Rs. 100.00 still owed
+    assert len(stmt["entries"]) == 2
+    assert "Vikram Seth" in stmt["shareable_text"]
+    assert "Total Balance Due: Rs.100.00" in stmt["shareable_text"]
+

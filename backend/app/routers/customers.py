@@ -15,6 +15,8 @@ from app.schemas.customer import (
     CustomerListResponse,
     CustomerPaymentCreate,
     CustomerResponse,
+    CustomerStatementEntry,
+    CustomerStatementResponse,
     CustomerUpdate,
 )
 from app.schemas.health import ErrorResponse
@@ -260,3 +262,128 @@ def deactivate_customer(customer_id: int) -> CustomerResponse:
         row = conn.execute("SELECT * FROM customers WHERE id = ?", (customer_id,)).fetchone()
         assert row is not None
         return CustomerResponse(**_row_to_customer(conn, row))
+
+
+@router.get(
+    "/{customer_id}/statement",
+    response_model=CustomerStatementResponse,
+    responses={404: {"model": ErrorResponse}},
+)
+def get_customer_statement(
+    customer_id: int,
+    from_date: Optional[str] = Query(None, description="Start date YYYY-MM-DD"),
+    to_date: Optional[str] = Query(None, description="End date YYYY-MM-DD"),
+) -> CustomerStatementResponse:
+    """Generate an auditable, date-filtered balance statement for a customer."""
+    with connection() as conn:
+        customer = conn.execute("SELECT * FROM customers WHERE id = ?", (customer_id,)).fetchone()
+        if not customer:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Customer {customer_id} not found.",
+            )
+
+        # 1. Opening balance before from_date
+        opening_balance = 0
+        if from_date:
+            prior_entry = conn.execute(
+                """
+                SELECT balance_after FROM customer_ledger
+                WHERE customer_id = ? AND created_at < ?
+                ORDER BY id DESC LIMIT 1
+                """,
+                (customer_id, f"{from_date} 00:00:00"),
+            ).fetchone()
+            if prior_entry and prior_entry[0] is not None:
+                opening_balance = int(prior_entry[0])
+
+        # 2. Entries in date range
+        query = "SELECT * FROM customer_ledger WHERE customer_id = ?"
+        params: list[Any] = [customer_id]
+        if from_date:
+            query += " AND created_at >= ?"
+            params.append(f"{from_date} 00:00:00")
+        if to_date:
+            query += " AND created_at <= ?"
+            params.append(f"{to_date} 23:59:59")
+        query += " ORDER BY id ASC"
+
+        rows = conn.execute(query, params).fetchall()
+
+        entries: list[CustomerStatementEntry] = []
+        total_debit = 0
+        total_credit = 0
+
+        for r in rows:
+            entry_type = str(r["entry_type"])
+            amt = int(r["amount"])
+            bal_after = int(r["balance_after"])
+            pm = str(r["payment_method"]) if r["payment_method"] else None
+            notes = str(r["notes"]) if r["notes"] else ""
+
+            if entry_type == "credit_sale":
+                debit = amt
+                credit = 0
+                desc = notes or f"Credit Sale #{r['transaction_id']}"
+                total_debit += debit
+            else:
+                debit = 0
+                credit = amt
+                desc = notes or (f"Payment ({pm or 'Cash'})" if entry_type == "payment" else "Adjustment")
+                total_credit += credit
+
+            entries.append(
+                CustomerStatementEntry(
+                    id=int(r["id"]),
+                    date=str(r["created_at"]),
+                    entry_type=entry_type,
+                    description=desc,
+                    debit=debit,
+                    credit=credit,
+                    balance_after=bal_after,
+                    payment_method=pm,
+                    notes=notes,
+                )
+            )
+
+        # 3. Closing balance
+        if entries:
+            closing_balance = entries[-1].balance_after
+        else:
+            closing_balance = opening_balance
+
+        # 4. Formatted shareable summary
+        def _fmt(p: int) -> str:
+            sign = "-" if p < 0 else ""
+            ap = abs(p)
+            return f"{sign}Rs.{ap // 100}.{ap % 100:02d}"
+
+        date_span = f"{from_date or 'Start'} to {to_date or 'Today'}"
+        shareable_text = (
+            f"*Khata Statement - DukaanVoice AI*\n"
+            f"Customer: {customer['name']}\n"
+            f"Phone: {customer['phone'] or 'N/A'}\n"
+            f"Period: {date_span}\n"
+            f"Opening Balance: {_fmt(opening_balance)}\n"
+            f"Total Credit Sales: {_fmt(total_debit)}\n"
+            f"Total Payments Received: {_fmt(total_credit)}\n"
+            f"---------------------------------\n"
+            f"*Total Balance Due: {_fmt(closing_balance)}*\n"
+            f"---------------------------------\n"
+            f"Thank you for your business!"
+        )
+
+        return CustomerStatementResponse(
+            customer_id=customer_id,
+            customer_name=str(customer["name"]),
+            customer_phone=str(customer["phone"] or ""),
+            from_date=from_date,
+            to_date=to_date,
+            opening_balance=opening_balance,
+            total_debit=total_debit,
+            total_credit=total_credit,
+            closing_balance=closing_balance,
+            entries=entries,
+            shareable_text=shareable_text,
+        )
+

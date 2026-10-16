@@ -10,7 +10,7 @@ Stock and money conventions (documented in docs/DATABASE_SCHEMA.md):
 
 from __future__ import annotations
 
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 4
 
 REQUIRED_TABLES = (
     "schema_migrations",
@@ -21,6 +21,8 @@ REQUIRED_TABLES = (
     "inventory_movements",
     "customers",
     "customer_ledger",
+    "expenses",
+    "cash_closings",
 )
 
 MIGRATION_001_STATEMENTS = (
@@ -196,6 +198,46 @@ MIGRATION_003_STATEMENTS = (
     "CREATE INDEX idx_customer_ledger_customer ON customer_ledger(customer_id)",
     "CREATE INDEX idx_customer_ledger_transaction ON customer_ledger(transaction_id)",
     "CREATE INDEX idx_customer_ledger_created ON customer_ledger(created_at)",
+)
+
+MIGRATION_004_STATEMENTS = (
+    """
+    CREATE TABLE expenses (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        expense_date TEXT NOT NULL,
+        category TEXT NOT NULL CHECK (length(trim(category)) > 0),
+        amount INTEGER NOT NULL CHECK (amount > 0),
+        payment_method TEXT NOT NULL CHECK (payment_method IN ('cash', 'upi', 'bank_transfer')),
+        notes TEXT NOT NULL DEFAULT '',
+        status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'reversed')),
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )
+    """,
+    "CREATE INDEX idx_expenses_date ON expenses(expense_date)",
+    "CREATE INDEX idx_expenses_category ON expenses(category)",
+    "CREATE INDEX idx_expenses_payment_method ON expenses(payment_method)",
+    "CREATE INDEX idx_expenses_status ON expenses(status)",
+    """
+    CREATE TABLE cash_closings (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        business_date TEXT NOT NULL UNIQUE,
+        opening_cash INTEGER NOT NULL DEFAULT 0 CHECK (opening_cash >= 0),
+        cash_sales INTEGER NOT NULL DEFAULT 0 CHECK (cash_sales >= 0),
+        cash_repayments INTEGER NOT NULL DEFAULT 0 CHECK (cash_repayments >= 0),
+        cash_expenses INTEGER NOT NULL DEFAULT 0 CHECK (cash_expenses >= 0),
+        cash_refunds INTEGER NOT NULL DEFAULT 0 CHECK (cash_refunds >= 0),
+        expected_cash INTEGER NOT NULL,
+        actual_cash INTEGER NOT NULL CHECK (actual_cash >= 0),
+        difference INTEGER NOT NULL,
+        status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'finalized')),
+        notes TEXT NOT NULL DEFAULT '',
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        closed_at TEXT
+    )
+    """,
+    "CREATE INDEX idx_cash_closings_date ON cash_closings(business_date)",
+    "CREATE INDEX idx_cash_closings_status ON cash_closings(status)",
 )
 
 

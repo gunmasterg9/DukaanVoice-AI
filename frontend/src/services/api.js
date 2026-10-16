@@ -235,5 +235,82 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(data),
     }),
+
+  getCustomerStatement: (customerId, params = {}) => {
+    const query = new URLSearchParams()
+    if (params.from_date) query.set('from_date', params.from_date)
+    if (params.to_date) query.set('to_date', params.to_date)
+    const qs = query.toString()
+    return request(`/customers/${customerId}/statement${qs ? `?${qs}` : ''}`)
+  },
+
+  // Expenses Register
+  getExpenses: (params = {}) => {
+    const query = new URLSearchParams()
+    if (params.from_date) query.set('from_date', params.from_date)
+    if (params.to_date) query.set('to_date', params.to_date)
+    if (params.category) query.set('category', params.category)
+    if (params.payment_method) query.set('payment_method', params.payment_method)
+    if (params.status) query.set('status', params.status)
+    if (params.include_reversed) query.set('include_reversed', 'true')
+    if (params.limit) query.set('limit', String(params.limit))
+    if (params.offset) query.set('offset', String(params.offset))
+    const qs = query.toString()
+    return request(`/expenses${qs ? `?${qs}` : ''}`)
+  },
+
+  getExpenseCategories: () => request('/expenses/categories'),
+
+  createExpense: (data) =>
+    request('/expenses', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  updateExpense: (id, data) =>
+    request(`/expenses/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  reverseExpense: (id, reason = '') =>
+    request(`/expenses/${id}/reverse`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    }),
+
+  // Daily Cash Closing & Reconciliation
+  getCashClosingPreview: (params = {}) => {
+    const query = new URLSearchParams()
+    if (params.business_date) query.set('business_date', params.business_date)
+    if (params.opening_cash !== undefined && params.opening_cash !== null) {
+      query.set('opening_cash', String(params.opening_cash))
+    }
+    const qs = query.toString()
+    return request(`/cash-closing/preview${qs ? `?${qs}` : ''}`)
+  },
+
+  createCashClosing: (data) =>
+    request('/cash-closing', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  finalizeCashClosing: (identifier) =>
+    request(`/cash-closing/${identifier}/finalize`, {
+      method: 'POST',
+    }),
+
+  listCashClosings: (params = {}) => {
+    const query = new URLSearchParams()
+    if (params.start_date) query.set('start_date', params.start_date)
+    if (params.end_date) query.set('end_date', params.end_date)
+    if (params.status) query.set('status', params.status)
+    if (params.limit) query.set('limit', String(params.limit))
+    if (params.offset) query.set('offset', String(params.offset))
+    const qs = query.toString()
+    return request(`/cash-closing${qs ? `?${qs}` : ''}`)
+  },
 }
+
 
