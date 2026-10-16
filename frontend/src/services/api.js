@@ -3,7 +3,7 @@
  * Phase 2 adds product management and unit conversion API calls.
  */
 
-const API_BASE = (import.meta.env.VITE_API_BASE_URL || '/api').replace(/\/$/, '')
+const API_BASE = ((typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE_URL) || '/api').replace(/\/$/, '')
 
 async function request(path, options = {}) {
   const config = {

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api } from '../services/api'
+import { useI18n } from '../i18n/I18nContext'
 import {
   formatTransactionStatus,
   formatTransactionType,
@@ -11,6 +12,7 @@ import {
 } from '../utils/formatters'
 
 export function Transactions() {
+  const { t } = useI18n()
   const [transactions, setTransactions] = useState([])
   const [total, setTotal] = useState(0)
   const [totalRevenue, setTotalRevenue] = useState(0)
@@ -129,10 +131,8 @@ export function Transactions() {
       {/* Top Header */}
       <div className="section-header">
         <div>
-          <h2>Sales & Purchase Register</h2>
-          <p className="subtitle">
-            Record sales drafts, verify customer orders, confirm stock deductions, and manage supplier purchases.
-          </p>
+          <h2>{t('transactions.title')}</h2>
+          <p className="subtitle">{t('transactions.subtitle')}</p>
         </div>
         <div className="action-buttons-group">
           <button
@@ -140,14 +140,14 @@ export function Transactions() {
             className="btn btn-primary"
             onClick={() => setActiveModal({ type: 'create', initialType: 'sale' })}
           >
-            + New Sale Draft
+            {t('transactions.new_sale')}
           </button>
           <button
             type="button"
             className="btn btn-outline"
             onClick={() => setActiveModal({ type: 'create', initialType: 'purchase' })}
           >
-            + New Purchase Draft
+            {t('transactions.new_purchase')}
           </button>
         </div>
       </div>
@@ -167,34 +167,34 @@ export function Transactions() {
         <div className="status-card">
           <div className="status-icon backend">₹</div>
           <div className="status-info">
-            <span className="stat-label">Confirmed Sales Revenue</span>
+            <span className="stat-label">{t('dashboard.stat_revenue')}</span>
             <span className="stat-val selling-price">{paiseToRupees(totalRevenue)}</span>
-            <span className="stat-sub">From confirmed sales in register</span>
+            <span className="stat-sub">{t('transactions.stat_total_revenue', { amount: paiseToRupees(totalRevenue) })}</span>
           </div>
         </div>
 
         <div className="status-card">
           <div className="status-icon database">🛒</div>
           <div className="status-info">
-            <span className="stat-label">Confirmed Purchase Expenditure</span>
+            <span className="stat-label">{t('dashboard.stat_purchases')}</span>
             <span className="stat-val">{paiseToRupees(totalExpense)}</span>
-            <span className="stat-sub">From confirmed vendor purchases</span>
+            <span className="stat-sub">{t('transactions.stat_total_expense', { amount: paiseToRupees(totalExpense) })}</span>
           </div>
         </div>
 
         <div className="status-card">
           <div className="status-icon phase">📋</div>
           <div className="status-info">
-            <span className="stat-label">Total Transactions</span>
+            <span className="stat-label">{t('transactions.table_items')}</span>
             <span className="stat-val">{total}</span>
-            <span className="stat-sub">Drafts, confirmed, and reversals</span>
+            <span className="stat-sub">{t('transactions.stat_total_tx', { count: total })}</span>
           </div>
         </div>
       </div>
 
       {/* Financial clarity note */}
       <div className="financial-note-banner">
-        <span>ℹ️ <strong>Financial note:</strong> Revenue reflects gross confirmed sales receipts. Revenue does not equal net profit. Inventory is updated strictly upon explicit confirmation.</span>
+        <span>ℹ️ {t('reports.revenue_note')}</span>
       </div>
 
       {/* Filter and Query Toolbar */}
@@ -208,9 +208,9 @@ export function Transactions() {
               setPage(0)
             }}
           >
-            <option value="">All Types (Sales & Purchases)</option>
-            <option value="sale">Sales Only</option>
-            <option value="purchase">Purchases Only</option>
+            <option value="">{t('transactions.filter_type_all')}</option>
+            <option value="sale">{t('transactions.filter_type_sales')}</option>
+            <option value="purchase">{t('transactions.filter_type_purchases')}</option>
           </select>
 
           <select
@@ -221,14 +221,14 @@ export function Transactions() {
               setPage(0)
             }}
           >
-            <option value="">All Statuses</option>
-            <option value="draft">Drafts Only</option>
-            <option value="confirmed">Confirmed Only</option>
-            <option value="reversed">Reversed Only</option>
+            <option value="">{t('transactions.filter_status_all')}</option>
+            <option value="draft">{t('transactions.filter_status_draft')}</option>
+            <option value="confirmed">{t('transactions.filter_status_confirmed')}</option>
+            <option value="reversed">{t('transactions.filter_status_reversed')}</option>
           </select>
 
           <div className="date-filter-group">
-            <label>From:</label>
+            <label>{t('common.date')}:</label>
             <input
               type="date"
               className="form-input date-input"
@@ -241,7 +241,7 @@ export function Transactions() {
           </div>
 
           <div className="date-filter-group">
-            <label>To:</label>
+            <label>→</label>
             <input
               type="date"
               className="form-input date-input"
@@ -265,7 +265,7 @@ export function Transactions() {
                 setPage(0)
               }}
             >
-              Reset Filters
+              {t('common.clear')}
             </button>
           )}
         </div>
@@ -276,23 +276,23 @@ export function Transactions() {
         {loading ? (
           <div className="table-loading">
             <div className="spinner" />
-            <p>Loading transactions…</p>
+            <p>{t('common.loading')}</p>
           </div>
         ) : error ? (
           <div className="table-error">
             <p>{error}</p>
             <button type="button" className="btn btn-outline" onClick={fetchTransactions}>
-              Retry
+              {t('common.retry')}
             </button>
           </div>
         ) : transactions.length === 0 ? (
           <div className="table-empty">
             <div className="empty-icon">🧾</div>
-            <h3>No transactions found</h3>
+            <h3>{t('transactions.no_transactions_found')}</h3>
             <p>
               {typeFilter || statusFilter || startDate || endDate
-                ? 'No transactions matched the selected filters.'
-                : 'Create your first sale draft to record customer orders and update shop stock.'}
+                ? t('transactions.no_transactions_found')
+                : t('transactions.subtitle')}
             </p>
             {!typeFilter && !statusFilter && (
               <button
@@ -300,7 +300,7 @@ export function Transactions() {
                 className="btn btn-primary"
                 onClick={() => setActiveModal({ type: 'create', initialType: 'sale' })}
               >
-                + Create First Sale Draft
+                {t('transactions.new_sale')}
               </button>
             )}
           </div>
@@ -309,19 +309,19 @@ export function Transactions() {
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>ID</th>
-                  <th>Date & Time</th>
-                  <th>Type</th>
-                  <th>Status</th>
-                  <th>Items Summary</th>
-                  <th>Total Amount</th>
-                  <th className="th-actions">Actions</th>
+                  <th>{t('transactions.table_id')}</th>
+                  <th>{t('transactions.table_date')}</th>
+                  <th>{t('transactions.table_type')}</th>
+                  <th>{t('transactions.table_status')}</th>
+                  <th>{t('transactions.table_items')}</th>
+                  <th>{t('transactions.table_amount')}</th>
+                  <th className="th-actions">{t('transactions.table_actions')}</th>
                 </tr>
               </thead>
               <tbody>
                 {transactions.map((tx) => {
-                  const typeBadge = formatTransactionType(tx.type)
-                  const statusBadge = formatTransactionStatus(tx.status)
+                  const typeBadge = formatTransactionType(tx.type, t)
+                  const statusBadge = formatTransactionStatus(tx.status, t)
                   const itemsSummary = tx.items
                     .map((it) => `${it.product_name} (${milliToQty(it.quantity)} ${it.unit})`)
                     .join(', ')
@@ -365,7 +365,7 @@ export function Transactions() {
                           className="btn-action"
                           onClick={() => setActiveModal({ type: 'detail', transactionId: tx.id })}
                         >
-                          View
+                          {t('common.view')}
                         </button>
                         {tx.status === 'draft' && (
                           <button
@@ -373,7 +373,7 @@ export function Transactions() {
                             className="btn-action btn-action-success"
                             onClick={() => setActiveModal({ type: 'review', transaction: tx })}
                           >
-                            Review & Confirm
+                            {t('transactions.action_review')}
                           </button>
                         )}
                         {tx.status === 'confirmed' && (
@@ -382,7 +382,7 @@ export function Transactions() {
                             className="btn-action btn-action-danger"
                             onClick={() => setActiveModal({ type: 'reverse', transaction: tx })}
                           >
-                            Reverse
+                            {t('transactions.action_reverse')}
                           </button>
                         )}
                       </td>
@@ -398,7 +398,7 @@ export function Transactions() {
         {total > pageSize && (
           <div className="pagination-bar">
             <span>
-              Showing {page * pageSize + 1}–{Math.min((page + 1) * pageSize, total)} of {total} transactions
+              Showing {page * pageSize + 1}–{Math.min((page + 1) * pageSize, total)} of {total}
             </span>
             <div className="pagination-controls">
               <button
@@ -407,16 +407,16 @@ export function Transactions() {
                 disabled={page === 0}
                 onClick={() => setPage((p) => Math.max(0, p - 1))}
               >
-                Previous
+                {t('common.previous')}
               </button>
-              <span className="page-number">Page {page + 1}</span>
+              <span className="page-number">{t('common.page', { page: page + 1 })}</span>
               <button
                 type="button"
                 className="btn btn-outline"
                 disabled={(page + 1) * pageSize >= total}
                 onClick={() => setPage((p) => p + 1)}
               >
-                Next
+                {t('common.next')}
               </button>
             </div>
           </div>
@@ -465,6 +465,7 @@ export function Transactions() {
 }
 
 function TransactionDraftModal({ initialType, onClose, onSuccess }) {
+  const { t } = useI18n()
   const [type, setType] = useState(initialType || 'sale')
   const [instruction, setInstruction] = useState('')
   const [items, setItems] = useState([
@@ -575,7 +576,7 @@ function TransactionDraftModal({ initialType, onClose, onSuccess }) {
     <div className="modal-backdrop">
       <div className="modal-content modal-wide">
         <div className="modal-header">
-          <h3>Create {type === 'sale' ? 'Sale' : 'Purchase'} Draft</h3>
+          <h3>{type === 'sale' ? t('transactions.modal_sale_title') : t('transactions.modal_purchase_title')}</h3>
           <button type="button" className="close-btn" onClick={onClose}>
             ×
           </button>
@@ -587,31 +588,31 @@ function TransactionDraftModal({ initialType, onClose, onSuccess }) {
         <form onSubmit={handleSubmit} className="modal-form">
           <div className="form-row">
             <div className="form-group flex-1">
-              <label>Transaction Type *</label>
+              <label>{t('transactions.table_type')} *</label>
               <div className="type-toggle-group">
                 <button
                   type="button"
                   className={`btn-type-toggle ${type === 'sale' ? 'active-sale' : ''}`}
                   onClick={() => setType('sale')}
                 >
-                  Sale (Customer Order)
+                  {t('transactions.type_sale')}
                 </button>
                 <button
                   type="button"
                   className={`btn-type-toggle ${type === 'purchase' ? 'active-purchase' : ''}`}
                   onClick={() => setType('purchase')}
                 >
-                  Purchase (Vendor Stock In)
+                  {t('transactions.type_purchase')}
                 </button>
               </div>
             </div>
 
             <div className="form-group flex-2">
-              <label>Shopkeeper Note / Original Instruction</label>
+              <label>{t('transactions.field_notes')}</label>
               <input
                 type="text"
                 className="form-input"
-                placeholder="e.g. Ramesh Patel order via counter"
+                placeholder={t('transactions.field_notes_placeholder')}
                 value={instruction}
                 onChange={(e) => setInstruction(e.target.value)}
               />
@@ -620,7 +621,7 @@ function TransactionDraftModal({ initialType, onClose, onSuccess }) {
 
           <div className="draft-items-section">
             <div className="draft-items-header">
-              <h4>Line Items</h4>
+              <h4>{t('transactions.items_heading')}</h4>
               <span className="field-help">
                 Drafts validate products and conversion rules without altering inventory yet.
               </span>
@@ -634,14 +635,14 @@ function TransactionDraftModal({ initialType, onClose, onSuccess }) {
                 <div key={idx} className="draft-item-card">
                   <div className="draft-item-grid">
                     <div className="form-group flex-2">
-                      <label>Product *</label>
+                      <label>{t('transactions.field_product')} *</label>
                       <select
                         className={`form-input ${itemErr.product_id ? 'input-error' : ''}`}
                         value={it.product_id}
                         disabled={loadingProducts}
                         onChange={(e) => handleProductSelect(idx, e.target.value)}
                       >
-                        <option value="">-- Choose product --</option>
+                        <option value="">-- {t('transactions.select_product')} --</option>
                         {availableProducts.map((p) => (
                           <option key={p.id} value={p.id}>
                             {p.name} ({p.sku}) — Stock: {milliToQty(p.stock_qty)} {p.base_unit}
@@ -654,7 +655,7 @@ function TransactionDraftModal({ initialType, onClose, onSuccess }) {
                     </div>
 
                     <div className="form-group flex-1">
-                      <label>Quantity *</label>
+                      <label>{t('transactions.field_quantity')} *</label>
                       <input
                         type="number"
                         step="any"
@@ -669,7 +670,7 @@ function TransactionDraftModal({ initialType, onClose, onSuccess }) {
                     </div>
 
                     <div className="form-group flex-1">
-                      <label>Unit *</label>
+                      <label>{t('transactions.field_unit')} *</label>
                       <input
                         type="text"
                         className={`form-input ${itemErr.unit ? 'input-error' : ''}`}
@@ -681,7 +682,7 @@ function TransactionDraftModal({ initialType, onClose, onSuccess }) {
                     </div>
 
                     <div className="form-group flex-1">
-                      <label>Unit Price (₹) *</label>
+                      <label>{t('transactions.field_price')} *</label>
                       <input
                         type="number"
                         step="0.01"
@@ -696,7 +697,7 @@ function TransactionDraftModal({ initialType, onClose, onSuccess }) {
                     </div>
 
                     <div className="form-group flex-1 line-total-preview">
-                      <label>Line Total (₹)</label>
+                      <label>{t('transactions.field_line_total')}</label>
                       <span className="preview-val">₹{lineEstimate.toFixed(2)}</span>
                     </div>
 
@@ -716,13 +717,12 @@ function TransactionDraftModal({ initialType, onClose, onSuccess }) {
             })}
 
             <button type="button" className="btn btn-outline btn-sm" onClick={addItemRow}>
-              + Add Another Item
+              {t('transactions.btn_add_item')}
             </button>
           </div>
 
           <div className="draft-summary-bar">
-            <span>Estimated Total:</span>
-            <span className="summary-total-val">₹{estimatedTotal.toFixed(2)}</span>
+            <span>{t('transactions.grand_total', { amount: `₹${estimatedTotal.toFixed(2)}` })}</span>
           </div>
 
           <div className="modal-actions">
@@ -732,10 +732,10 @@ function TransactionDraftModal({ initialType, onClose, onSuccess }) {
               disabled={submitting}
               onClick={onClose}
             >
-              Cancel
+              {t('common.cancel')}
             </button>
             <button type="submit" className="btn btn-primary" disabled={submitting}>
-              {submitting ? 'Creating Draft…' : 'Save as Draft →'}
+              {submitting ? t('common.loading') : t('transactions.btn_save_draft')}
             </button>
           </div>
         </form>
@@ -745,6 +745,7 @@ function TransactionDraftModal({ initialType, onClose, onSuccess }) {
 }
 
 function TransactionReviewModal({ transaction, onClose, onConfirm }) {
+  const { t } = useI18n()
   const [confirming, setConfirming] = useState(false)
   const [error, setError] = useState(null)
 
@@ -765,7 +766,7 @@ function TransactionReviewModal({ transaction, onClose, onConfirm }) {
       <div className="modal-content modal-wide">
         <div className="modal-header">
           <div>
-            <h3>Review Draft #{transaction.id}</h3>
+            <h3>{t('transactions.modal_review_title', { id: transaction.id })}</h3>
             <span className="modal-subtitle">
               Verify line items and quantities before atomic inventory confirmation.
             </span>
@@ -780,17 +781,17 @@ function TransactionReviewModal({ transaction, onClose, onConfirm }) {
         <div className="modal-body">
           <div className="review-meta-bar">
             <div>
-              <span className="stat-label">Type:</span>{' '}
-              <span className={`badge badge-${formatTransactionType(transaction.type).tone}`}>
+              <span className="stat-label">{t('transactions.table_type')}:</span>{' '}
+              <span className={`badge badge-${formatTransactionType(transaction.type, t).tone}`}>
                 {transaction.type.toUpperCase()}
               </span>
             </div>
             <div>
-              <span className="stat-label">Status:</span>{' '}
-              <span className="badge badge-warning">DRAFT (No stock changed)</span>
+              <span className="stat-label">{t('transactions.table_status')}:</span>{' '}
+              <span className="badge badge-warning">{t('transactions.status_draft')}</span>
             </div>
             <div>
-              <span className="stat-label">Date:</span>{' '}
+              <span className="stat-label">{t('transactions.table_date')}:</span>{' '}
               <span>{new Date(transaction.created_at).toLocaleString()}</span>
             </div>
           </div>
@@ -799,12 +800,12 @@ function TransactionReviewModal({ transaction, onClose, onConfirm }) {
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>Product</th>
-                  <th>Quantity</th>
-                  <th>Unit</th>
+                  <th>{t('reports.product')}</th>
+                  <th>{t('transactions.field_quantity')}</th>
+                  <th>{t('transactions.field_unit')}</th>
                   <th>Base Equivalent</th>
-                  <th>Unit Price</th>
-                  <th>Line Total</th>
+                  <th>{t('transactions.field_price')}</th>
+                  <th>{t('transactions.field_line_total')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -834,9 +835,7 @@ function TransactionReviewModal({ transaction, onClose, onConfirm }) {
 
           <div className="confirm-notice-banner">
             <p>
-              ⚠️ <strong>Confirmation action:</strong> Clicking &quot;Confirm &amp; Update Inventory&quot;
-              will atomically deduct (or add) stock in SQLite and record auditable movement logs.
-              This cannot be undone without a formal reversal.
+              ⚠️ {transaction.type === 'sale' ? t('transactions.review_alert_sale') : t('transactions.review_alert_purchase')}
             </p>
           </div>
         </div>
@@ -848,7 +847,7 @@ function TransactionReviewModal({ transaction, onClose, onConfirm }) {
             disabled={confirming}
             onClick={onClose}
           >
-            Keep as Draft
+            {t('common.cancel')}
           </button>
           <button
             type="button"
@@ -856,7 +855,7 @@ function TransactionReviewModal({ transaction, onClose, onConfirm }) {
             disabled={confirming}
             onClick={handleConfirmClick}
           >
-            {confirming ? 'Posting Inventory…' : 'Confirm & Update Inventory ✔'}
+            {confirming ? t('transactions.btn_confirming') : t('transactions.btn_confirm_tx')}
           </button>
         </div>
       </div>
@@ -865,6 +864,7 @@ function TransactionReviewModal({ transaction, onClose, onConfirm }) {
 }
 
 function TransactionDetailModal({ transactionId, onClose, onConfirm, onReverse }) {
+  const { t } = useI18n()
   const [detail, setDetail] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -925,40 +925,40 @@ function TransactionDetailModal({ transactionId, onClose, onConfirm, onReverse }
         {loading ? (
           <div className="modal-loading">
             <div className="spinner" />
-            <p>Loading transaction details…</p>
+            <p>{t('common.loading')}</p>
           </div>
         ) : error ? (
           <div className="modal-error">
             <p>{error}</p>
             <button type="button" className="btn btn-outline" onClick={loadDetail}>
-              Retry
+              {t('common.retry')}
             </button>
           </div>
         ) : detail ? (
           <div className="modal-body">
             <div className="detail-grid">
               <div className="detail-stat">
-                <span className="stat-label">Total Amount</span>
+                <span className="stat-label">{t('transactions.table_amount')}</span>
                 <span className="stat-val selling-price">
                   {paiseToRupees(detail.total_amount)}
                 </span>
-                <span className="stat-sub">{detail.total_items} items</span>
+                <span className="stat-sub">{detail.total_items} {t('transactions.table_items')}</span>
               </div>
 
               <div className="detail-stat">
-                <span className="stat-label">Type & Status</span>
+                <span className="stat-label">{t('transactions.table_type')} &amp; {t('transactions.table_status')}</span>
                 <div style={{ display: 'flex', gap: 6, marginTop: 4 }}>
-                  <span className={`badge badge-${formatTransactionType(detail.type).tone}`}>
-                    {detail.type}
+                  <span className={`badge badge-${formatTransactionType(detail.type, t).tone}`}>
+                    {formatTransactionType(detail.type, t).label}
                   </span>
-                  <span className={`badge badge-${formatTransactionStatus(detail.status).tone}`}>
-                    {detail.status}
+                  <span className={`badge badge-${formatTransactionStatus(detail.status, t).tone}`}>
+                    {formatTransactionStatus(detail.status, t).label}
                   </span>
                 </div>
               </div>
 
               <div className="detail-stat">
-                <span className="stat-label">Created At</span>
+                <span className="stat-label">{t('transactions.table_date')}</span>
                 <span className="stat-sub" style={{ marginTop: 6, color: 'var(--text-primary)' }}>
                   {new Date(detail.created_at).toLocaleString()}
                 </span>
@@ -974,7 +974,7 @@ function TransactionDetailModal({ transactionId, onClose, onConfirm, onReverse }
 
             {detail.original_instruction && (
               <div className="meta-box" style={{ margin: 'var(--space-md) 0' }}>
-                <span className="meta-k">Shopkeeper Note / Instruction:</span>
+                <span className="meta-k">{t('transactions.field_notes')}:</span>
                 <p className="meta-v" style={{ marginTop: 4 }}>
                   {detail.original_instruction}
                 </p>
@@ -983,17 +983,17 @@ function TransactionDetailModal({ transactionId, onClose, onConfirm, onReverse }
 
             {/* Line items table */}
             <div className="conversions-section">
-              <h4>Line Items</h4>
+              <h4>{t('transactions.items_heading')}</h4>
               <div className="table-container" style={{ margin: 'var(--space-sm) 0' }}>
                 <table className="data-table">
                   <thead>
                     <tr>
-                      <th>Product</th>
-                      <th>Quantity</th>
-                      <th>Unit</th>
+                      <th>{t('reports.product')}</th>
+                      <th>{t('transactions.field_quantity')}</th>
+                      <th>{t('transactions.field_unit')}</th>
                       <th>Base Equivalent</th>
-                      <th>Unit Price</th>
-                      <th>Line Total</th>
+                      <th>{t('transactions.field_price')}</th>
+                      <th>{t('transactions.field_line_total')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1026,7 +1026,7 @@ function TransactionDetailModal({ transactionId, onClose, onConfirm, onReverse }
                     <thead>
                       <tr>
                         <th>Movement Type</th>
-                        <th>Product</th>
+                        <th>{t('reports.product')}</th>
                         <th>Qty Change</th>
                         <th>Stock Before</th>
                         <th>Stock After</th>
@@ -1077,7 +1077,7 @@ function TransactionDetailModal({ transactionId, onClose, onConfirm, onReverse }
                 onConfirm(detail)
               }}
             >
-              Confirm Transaction
+              {t('transactions.action_review')}
             </button>
           )}
           {detail?.status === 'confirmed' && (
@@ -1090,11 +1090,11 @@ function TransactionDetailModal({ transactionId, onClose, onConfirm, onReverse }
                 onReverse(detail)
               }}
             >
-              Reverse Transaction
+              {t('transactions.action_reverse')}
             </button>
           )}
           <button type="button" className="btn btn-outline" onClick={onClose}>
-            Close
+            {t('common.close')}
           </button>
         </div>
       </div>
@@ -1103,11 +1103,12 @@ function TransactionDetailModal({ transactionId, onClose, onConfirm, onReverse }
 }
 
 function TransactionReverseModal({ transaction, onClose, onConfirm }) {
+  const { t } = useI18n()
   return (
     <div className="modal-backdrop">
       <div className="modal-content modal-sm">
         <div className="modal-header">
-          <h3>Reverse Transaction #{transaction.id}</h3>
+          <h3>{t('transactions.modal_reverse_title', { id: transaction.id })}</h3>
           <button type="button" className="close-btn" onClick={onClose}>
             ×
           </button>
@@ -1118,20 +1119,19 @@ function TransactionReverseModal({ transaction, onClose, onConfirm }) {
             <strong>{paiseToRupees(transaction.total_amount)}</strong>?
           </p>
           <p className="field-help warning-text">
-            Reversing will post compensating inventory movement records and restore original
-            stock. The original transaction is never deleted and remains permanently audited.
+            {t('transactions.reverse_warning')}
           </p>
         </div>
         <div className="modal-actions">
           <button type="button" className="btn btn-outline" onClick={onClose}>
-            Cancel
+            {t('common.cancel')}
           </button>
           <button
             type="button"
             className="btn btn-accent btn-danger-tone"
             onClick={onConfirm}
           >
-            Yes, Reverse
+            {t('transactions.btn_confirm_reverse')}
           </button>
         </div>
       </div>

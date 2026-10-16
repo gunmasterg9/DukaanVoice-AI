@@ -153,50 +153,50 @@ export function validateTransactionDraft(values) {
   return { isValid, errors }
 }
 
-export function formatTransactionStatus(status) {
+export function formatTransactionStatus(status, t) {
   switch (status) {
     case 'confirmed':
-      return { tone: 'success', label: 'Confirmed' }
+      return { tone: 'success', label: t ? t('transactions.status_confirmed') : 'Confirmed' }
     case 'reversed':
-      return { tone: 'danger', label: 'Reversed' }
+      return { tone: 'danger', label: t ? t('transactions.status_reversed') : 'Reversed' }
     case 'draft':
     default:
-      return { tone: 'warning', label: 'Draft' }
+      return { tone: 'warning', label: t ? t('transactions.status_draft') : 'Draft' }
   }
 }
 
-export function formatTransactionType(type) {
+export function formatTransactionType(type, t) {
   switch (type) {
     case 'sale':
-      return { tone: 'success', label: 'Sale' }
+      return { tone: 'success', label: t ? t('transactions.type_sale') : 'Sale' }
     case 'purchase':
-      return { tone: 'info', label: 'Purchase' }
+      return { tone: 'info', label: t ? t('transactions.type_purchase') : 'Purchase' }
     default:
       return { tone: 'secondary', label: type }
   }
 }
 
-export function formatReconciliationStatus(status) {
+export function formatReconciliationStatus(status, t) {
   switch (status) {
     case 'reconciled':
-      return { tone: 'success', label: 'Reconciled' }
+      return { tone: 'success', label: t ? t('reports.status_reconciled') : 'Reconciled' }
     case 'discrepancy':
-      return { tone: 'danger', label: 'Discrepancy' }
+      return { tone: 'danger', label: t ? t('reports.status_discrepancy') : 'Discrepancy' }
     case 'gap_detected':
-      return { tone: 'danger', label: 'Chain Gap' }
+      return { tone: 'danger', label: t ? t('reports.status_gap_detected') : 'Chain Gap' }
     case 'no_movements':
-      return { tone: 'warning', label: 'No Movements' }
+      return { tone: 'warning', label: t ? t('reports.status_no_movements') : 'No Movements' }
     default:
       return { tone: 'secondary', label: status || 'Unknown' }
   }
 }
 
-export function formatMovementType(type) {
+export function formatMovementType(type, t) {
   switch (type) {
     case 'sale':
-      return { tone: 'danger', label: 'Sale' }
+      return { tone: 'danger', label: t ? t('transactions.type_sale') : 'Sale' }
     case 'purchase':
-      return { tone: 'success', label: 'Purchase' }
+      return { tone: 'success', label: t ? t('transactions.type_purchase') : 'Purchase' }
     case 'adjustment':
       return { tone: 'info', label: 'Adjustment' }
     case 'reversal':

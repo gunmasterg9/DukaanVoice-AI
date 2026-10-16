@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api } from '../services/api'
+import { useI18n } from '../i18n/I18nContext'
 import {
   formatMovementType,
   formatReconciliationStatus,
@@ -8,6 +9,7 @@ import {
 } from '../utils/formatters'
 
 export function Reports() {
+  const { t } = useI18n()
   const [activeTab, setActiveTab] = useState('daily-sales')
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
@@ -124,9 +126,9 @@ export function Reports() {
       <div className="card">
         <div className="card-header">
           <div>
-            <h2 className="card-title">Business Reports &amp; Inventory Reconciliation</h2>
+            <h2 className="card-title">{t('nav.reports')}</h2>
             <p className="placeholder-copy" style={{ marginTop: '4px' }}>
-              Auditable sales analytics, purchase tracking, stock valuation, and mathematical ledger integrity checks.
+              {t('reports.daily_sales_desc')}
             </p>
           </div>
           <span className="badge badge-info">Phase 4</span>
@@ -134,9 +136,7 @@ export function Reports() {
 
         {/* Accounting Transparency Notice */}
         <div className="financial-note-banner" style={{ marginTop: 'var(--space-sm)' }}>
-          <strong>Transparency Notice:</strong> Total revenue reflects customer payments from confirmed sales.
-          Unconfirmed drafts are strictly excluded. Reversed sales are itemized separately and subtracted from net totals.
-          DukaanVoice AI does not report estimated &quot;profit&quot; because batch-level acquisition cost tracking (COGS) is not supported in the database schema.
+          <strong>Transparency Notice:</strong> {t('reports.revenue_note')}
         </div>
       </div>
 
@@ -147,35 +147,35 @@ export function Reports() {
           className={`report-tab-btn ${activeTab === 'daily-sales' ? 'active' : ''}`}
           onClick={() => switchTab('daily-sales')}
         >
-          Daily Sales
+          {t('reports.tab_daily_sales')}
         </button>
         <button
           type="button"
           className={`report-tab-btn ${activeTab === 'purchases' ? 'active' : ''}`}
           onClick={() => switchTab('purchases')}
         >
-          Purchase Ledger
+          {t('reports.tab_purchases')}
         </button>
         <button
           type="button"
           className={`report-tab-btn ${activeTab === 'product-sales' ? 'active' : ''}`}
           onClick={() => switchTab('product-sales')}
         >
-          Product Sales
+          {t('reports.tab_product_sales')}
         </button>
         <button
           type="button"
           className={`report-tab-btn ${activeTab === 'inventory' ? 'active' : ''}`}
           onClick={() => switchTab('inventory')}
         >
-          Inventory Summary
+          {t('reports.tab_inventory')}
         </button>
         <button
           type="button"
           className={`report-tab-btn ${activeTab === 'reconciliation' ? 'active' : ''}`}
           onClick={() => switchTab('reconciliation')}
         >
-          Reconciliation &amp; Audit
+          {t('reports.tab_reconciliation')}
         </button>
       </div>
 
@@ -183,7 +183,7 @@ export function Reports() {
       {['daily-sales', 'purchases', 'product-sales'].includes(activeTab) && (
         <div className="card toolbar-card">
           <div className="date-filter-group">
-            <span>Date Range:</span>
+            <span>{t('common.date')}:</span>
             <input
               type="date"
               className="input-field date-input"
@@ -191,7 +191,7 @@ export function Reports() {
               onChange={(e) => setStartDate(e.target.value)}
               title="Start date"
             />
-            <span>to</span>
+            <span>→</span>
             <input
               type="date"
               className="input-field date-input"
@@ -206,7 +206,7 @@ export function Reports() {
                 style={{ padding: '4px 10px', fontSize: '0.78rem' }}
                 onClick={handleResetDates}
               >
-                Reset Dates
+                {t('common.clear')}
               </button>
             )}
           </div>
@@ -218,7 +218,7 @@ export function Reports() {
         <div className="notice-banner notice-danger">
           <span>{error}</span>
           <button type="button" className="btn btn-outline" onClick={() => setError(null)}>
-            Dismiss
+            {t('common.close')}
           </button>
         </div>
       )}
@@ -227,7 +227,7 @@ export function Reports() {
       {loading && (
         <div className="card" style={{ textAlign: 'center', padding: 'var(--space-2xl)' }}>
           <div className="spinner" style={{ margin: '0 auto var(--space-md)' }} />
-          <p className="placeholder-copy">Calculating authoritative report data...</p>
+          <p className="placeholder-copy">{t('common.loading')}</p>
         </div>
       )}
 
@@ -238,12 +238,12 @@ export function Reports() {
           <div className="status-grid">
             <div className="status-card tone-success">
               <div className="status-info">
-                <h3>Confirmed Net Revenue</h3>
+                <h3>{t('reports.net_revenue')}</h3>
                 <p className="summary-total-val" style={{ color: 'var(--color-success)' }}>
                   {paiseToRupees(salesReport.total_revenue)}
                 </p>
                 <div className="kpi-subtext">
-                  {salesReport.total_transactions} confirmed sales transaction{salesReport.total_transactions !== 1 ? 's' : ''}
+                  {salesReport.total_transactions} {t('reports.transactions_count')}
                 </div>
               </div>
             </div>
@@ -255,19 +255,19 @@ export function Reports() {
                   {paiseToRupees(salesReport.reversed_revenue)}
                 </p>
                 <div className="kpi-subtext">
-                  {salesReport.reversed_count} reversed sale{salesReport.reversed_count !== 1 ? 's' : ''}
+                  {salesReport.reversed_count} {t('transactions.status_reversed')}
                 </div>
               </div>
             </div>
 
             <div className="status-card">
               <div className="status-info">
-                <h3>Gross Recorded Sales</h3>
+                <h3>{t('reports.gross_revenue')}</h3>
                 <p className="summary-total-val" style={{ color: 'var(--color-primary-light)' }}>
                   {paiseToRupees(salesReport.gross_revenue)}
                 </p>
                 <div className="kpi-subtext">
-                  Confirmed + Reversed sales total
+                  {t('reports.revenue_note')}
                 </div>
               </div>
             </div>
@@ -276,23 +276,23 @@ export function Reports() {
           {/* Daily Table */}
           <div className="card" style={{ marginTop: 'var(--space-md)' }}>
             <div className="card-header">
-              <h3 className="card-title">Sales Breakdown by Day</h3>
-              <span className="badge badge-info">{salesReport.days.length} Day{salesReport.days.length !== 1 ? 's' : ''}</span>
+              <h3 className="card-title">{t('reports.daily_sales_title')}</h3>
+              <span className="badge badge-info">{salesReport.days.length} Days</span>
             </div>
 
             {salesReport.days.length === 0 ? (
               <div className="empty-state">
-                <p>No confirmed sales found for the selected period.</p>
+                <p>{t('reports.empty_sales')}</p>
               </div>
             ) : (
               <div className="table-container">
                 <table className="table">
                   <thead>
                     <tr>
-                      <th>Date</th>
-                      <th style={{ textAlign: 'center' }}>Confirmed Sales</th>
-                      <th style={{ textAlign: 'right' }}>Net Confirmed Revenue</th>
-                      <th style={{ textAlign: 'center' }}>Reversals</th>
+                      <th>{t('reports.date')}</th>
+                      <th style={{ textAlign: 'center' }}>{t('reports.transactions_count')}</th>
+                      <th style={{ textAlign: 'right' }}>{t('reports.net_revenue')}</th>
+                      <th style={{ textAlign: 'center' }}>{t('transactions.status_reversed')}</th>
                       <th style={{ textAlign: 'right' }}>Reversed Value</th>
                     </tr>
                   </thead>
@@ -332,12 +332,12 @@ export function Reports() {
           <div className="status-grid">
             <div className="status-card tone-info">
               <div className="status-info">
-                <h3>Confirmed Net Expenditure</h3>
+                <h3>{t('dashboard.stat_purchases')}</h3>
                 <p className="summary-total-val" style={{ color: 'var(--color-info)' }}>
                   {paiseToRupees(purchasesReport.total_expenditure)}
                 </p>
                 <div className="kpi-subtext">
-                  {purchasesReport.total_transactions} confirmed purchase transaction{purchasesReport.total_transactions !== 1 ? 's' : ''}
+                  {purchasesReport.total_transactions} {t('reports.transactions_count')}
                 </div>
               </div>
             </div>
@@ -349,7 +349,7 @@ export function Reports() {
                   {paiseToRupees(purchasesReport.reversed_expenditure)}
                 </p>
                 <div className="kpi-subtext">
-                  {purchasesReport.reversed_count} reversed purchase{purchasesReport.reversed_count !== 1 ? 's' : ''}
+                  {purchasesReport.reversed_count} {t('transactions.status_reversed')}
                 </div>
               </div>
             </div>
@@ -361,7 +361,7 @@ export function Reports() {
                   {paiseToRupees(purchasesReport.gross_expenditure)}
                 </p>
                 <div className="kpi-subtext">
-                  Confirmed + Reversed purchases
+                  Confirmed + Reversed
                 </div>
               </div>
             </div>
@@ -369,23 +369,23 @@ export function Reports() {
 
           <div className="card" style={{ marginTop: 'var(--space-md)' }}>
             <div className="card-header">
-              <h3 className="card-title">Purchase Breakdown by Day</h3>
-              <span className="badge badge-info">{purchasesReport.days.length} Day{purchasesReport.days.length !== 1 ? 's' : ''}</span>
+              <h3 className="card-title">{t('reports.purchases_title')}</h3>
+              <span className="badge badge-info">{purchasesReport.days.length} Days</span>
             </div>
 
             {purchasesReport.days.length === 0 ? (
               <div className="empty-state">
-                <p>No confirmed purchases found for the selected period.</p>
+                <p>{t('reports.empty_purchases')}</p>
               </div>
             ) : (
               <div className="table-container">
                 <table className="table">
                   <thead>
                     <tr>
-                      <th>Date</th>
-                      <th style={{ textAlign: 'center' }}>Confirmed Purchases</th>
+                      <th>{t('reports.date')}</th>
+                      <th style={{ textAlign: 'center' }}>{t('reports.transactions_count')}</th>
                       <th style={{ textAlign: 'right' }}>Net Expenditure</th>
-                      <th style={{ textAlign: 'center' }}>Reversals</th>
+                      <th style={{ textAlign: 'center' }}>{t('transactions.status_reversed')}</th>
                       <th style={{ textAlign: 'right' }}>Reversed Value</th>
                     </tr>
                   </thead>
@@ -425,7 +425,7 @@ export function Reports() {
           <div className="status-grid">
             <div className="status-card tone-success">
               <div className="status-info">
-                <h3>Total Product Sales Value</h3>
+                <h3>{t('reports.total_sales')}</h3>
                 <p className="summary-total-val" style={{ color: 'var(--color-success)' }}>
                   {paiseToRupees(productSalesReport.total_sales_value)}
                 </p>
@@ -446,11 +446,11 @@ export function Reports() {
 
           <div className="card" style={{ marginTop: 'var(--space-md)' }}>
             <div className="card-header">
-              <h3 className="card-title">Sales Performance by Product</h3>
+              <h3 className="card-title">{t('reports.product_sales_title')}</h3>
               <div style={{ display: 'flex', gap: 'var(--space-sm)' }}>
                 <input
                   type="text"
-                  placeholder="Filter product name or SKU..."
+                  placeholder={t('products.search_placeholder')}
                   className="input-field"
                   style={{ width: '220px', padding: '6px 10px', fontSize: '0.82rem' }}
                   value={productQuery}
@@ -461,19 +461,19 @@ export function Reports() {
 
             {productSalesReport.items.length === 0 ? (
               <div className="empty-state">
-                <p>No product sales recorded in the selected date range.</p>
+                <p>{t('reports.empty_product_sales')}</p>
               </div>
             ) : (
               <div className="table-container">
                 <table className="table">
                   <thead>
                     <tr>
-                      <th>Product</th>
-                      <th>Category</th>
-                      <th>Base Unit</th>
-                      <th style={{ textAlign: 'right' }}>Net Quantity Sold</th>
-                      <th style={{ textAlign: 'right' }}>Net Sales Value</th>
-                      <th style={{ textAlign: 'center' }}>Transactions</th>
+                      <th>{t('reports.product')}</th>
+                      <th>{t('products.field_category')}</th>
+                      <th>{t('products.field_base_unit')}</th>
+                      <th style={{ textAlign: 'right' }}>{t('reports.qty_sold')}</th>
+                      <th style={{ textAlign: 'right' }}>{t('reports.total_sales')}</th>
+                      <th style={{ textAlign: 'center' }}>{t('reports.transactions_count')}</th>
                       <th style={{ textAlign: 'right' }}>Reversed Sales</th>
                     </tr>
                   </thead>
@@ -531,7 +531,7 @@ export function Reports() {
           <div className="status-grid">
             <div className="status-card">
               <div className="status-info">
-                <h3>Total Products</h3>
+                <h3>{t('reports.total_items')}</h3>
                 <p className="summary-total-val" style={{ color: 'var(--text-primary)' }}>
                   {inventoryReport.total_products}
                 </p>
@@ -541,7 +541,7 @@ export function Reports() {
 
             <div className={`status-card ${inventoryReport.low_stock_count > 0 ? 'tone-danger' : 'tone-success'}`}>
               <div className="status-info">
-                <h3>Low Stock Items</h3>
+                <h3>{t('reports.low_stock_items')}</h3>
                 <p className="summary-total-val" style={{ color: inventoryReport.low_stock_count > 0 ? 'var(--color-danger)' : 'var(--color-success)' }}>
                   {inventoryReport.low_stock_count}
                 </p>
@@ -551,7 +551,7 @@ export function Reports() {
 
             <div className="status-card tone-info">
               <div className="status-info">
-                <h3>Inventory Cost Valuation</h3>
+                <h3>{t('reports.cost_value')}</h3>
                 <p className="summary-total-val" style={{ color: 'var(--color-info)' }}>
                   {paiseToRupees(inventoryReport.total_inventory_cost_value)}
                 </p>
@@ -561,7 +561,7 @@ export function Reports() {
 
             <div className="status-card tone-success">
               <div className="status-info">
-                <h3>Inventory Selling Valuation</h3>
+                <h3>{t('reports.selling_value')}</h3>
                 <p className="summary-total-val" style={{ color: 'var(--color-success)' }}>
                   {paiseToRupees(inventoryReport.total_inventory_selling_value)}
                 </p>
@@ -572,7 +572,7 @@ export function Reports() {
 
           <div className="card" style={{ marginTop: 'var(--space-md)' }}>
             <div className="card-header">
-              <h3 className="card-title">Inventory Stock &amp; Audit Status</h3>
+              <h3 className="card-title">{t('reports.inventory_title')}</h3>
               <div style={{ display: 'flex', gap: 'var(--space-sm)', alignItems: 'center' }}>
                 <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', cursor: 'pointer' }}>
                   <input
@@ -580,7 +580,7 @@ export function Reports() {
                     checked={lowStockOnly}
                     onChange={(e) => setLowStockOnly(e.target.checked)}
                   />
-                  <span>Low stock only</span>
+                  <span>{t('products.filter_low_stock')}</span>
                 </label>
               </div>
             </div>
@@ -594,11 +594,11 @@ export function Reports() {
                 <table className="table">
                   <thead>
                     <tr>
-                      <th>Product</th>
-                      <th>Category</th>
-                      <th style={{ textAlign: 'right' }}>Current Stock</th>
+                      <th>{t('reports.product')}</th>
+                      <th>{t('products.field_category')}</th>
+                      <th style={{ textAlign: 'right' }}>{t('reports.recorded_stock')}</th>
                       <th style={{ textAlign: 'right' }}>Threshold</th>
-                      <th>Status</th>
+                      <th>{t('common.status')}</th>
                       <th style={{ textAlign: 'right' }}>Inflows</th>
                       <th style={{ textAlign: 'right' }}>Outflows</th>
                       <th style={{ textAlign: 'center' }}>Audit Ledger</th>
@@ -669,7 +669,7 @@ export function Reports() {
 
             <div className="status-card tone-success">
               <div className="status-info">
-                <h3>Reconciled</h3>
+                <h3>{t('reports.status_balanced')}</h3>
                 <p className="summary-total-val" style={{ color: 'var(--color-success)' }}>
                   {reconciliationReport.summary.reconciled_count}
                 </p>
@@ -679,7 +679,7 @@ export function Reports() {
 
             <div className={`status-card ${reconciliationReport.summary.discrepancy_count > 0 ? 'tone-danger' : ''}`}>
               <div className="status-info">
-                <h3>Discrepancies</h3>
+                <h3>{t('reports.status_discrepancy')}</h3>
                 <p className="summary-total-val" style={{ color: reconciliationReport.summary.discrepancy_count > 0 ? 'var(--color-danger)' : 'var(--text-muted)' }}>
                   {reconciliationReport.summary.discrepancy_count}
                 </p>
@@ -711,9 +711,9 @@ export function Reports() {
           <div className="card" style={{ marginTop: 'var(--space-md)' }}>
             <div className="card-header">
               <div>
-                <h3 className="card-title">Stock Ledger Mathematical Reconciliation</h3>
+                <h3 className="card-title">{t('reports.reconciliation_title')}</h3>
                 <p className="placeholder-copy" style={{ fontSize: '0.8rem', marginTop: '2px' }}>
-                  Audits whether catalog stock matches the movement ledger: initial adjustment + ∑(purchases - sales + reversals).
+                  {t('reports.reconciliation_desc')}
                 </p>
               </div>
               <div style={{ display: 'flex', gap: 'var(--space-sm)' }}>
@@ -723,10 +723,10 @@ export function Reports() {
                   value={reconStatusFilter}
                   onChange={(e) => setReconStatusFilter(e.target.value)}
                 >
-                  <option value="all">All statuses</option>
+                  <option value="all">{t('common.all')}</option>
                   <option value="discrepancy">Discrepancies only</option>
                   <option value="gap_detected">Chain gaps only</option>
-                  <option value="reconciled">Reconciled only</option>
+                  <option value="reconciled">{t('reports.status_balanced')}</option>
                   <option value="no_movements">No movements</option>
                 </select>
               </div>
@@ -741,12 +741,12 @@ export function Reports() {
                 <table className="table">
                   <thead>
                     <tr>
-                      <th>Product</th>
-                      <th style={{ textAlign: 'right' }}>Catalog Stock</th>
-                      <th style={{ textAlign: 'right' }}>Ledger Calculated</th>
-                      <th style={{ textAlign: 'right' }}>Discrepancy (Δ)</th>
+                      <th>{t('reports.product')}</th>
+                      <th style={{ textAlign: 'right' }}>{t('reports.recorded_stock')}</th>
+                      <th style={{ textAlign: 'right' }}>{t('reports.calculated_stock')}</th>
+                      <th style={{ textAlign: 'right' }}>{t('reports.discrepancy')} (Δ)</th>
                       <th style={{ textAlign: 'center' }}>Movements</th>
-                      <th>Status</th>
+                      <th>{t('common.status')}</th>
                       <th>Audit Details</th>
                     </tr>
                   </thead>
@@ -757,7 +757,7 @@ export function Reports() {
                         return it.status === reconStatusFilter
                       })
                       .map((item) => {
-                        const statusObj = formatReconciliationStatus(item.status)
+                        const statusObj = formatReconciliationStatus(item.status, t)
                         return (
                           <tr key={item.product_id}>
                             <td>
@@ -794,7 +794,7 @@ export function Reports() {
                                 </div>
                               ) : (
                                 <span style={{ color: 'var(--color-success)', fontSize: '0.8rem' }}>
-                                  ✓ Mathematical audit verified
+                                  ✓ {t('reports.audit_pass')}
                                 </span>
                               )}
                             </td>
@@ -834,7 +834,7 @@ export function Reports() {
               {movementsLoading ? (
                 <div style={{ textAlign: 'center', padding: 'var(--space-xl)' }}>
                   <div className="spinner" style={{ margin: '0 auto var(--space-md)' }} />
-                  <p className="placeholder-copy">Loading movement audit records...</p>
+                  <p className="placeholder-copy">{t('common.loading')}</p>
                 </div>
               ) : movementsData.length === 0 ? (
                 <div className="empty-state">
@@ -847,16 +847,16 @@ export function Reports() {
                       <tr>
                         <th>Movement ID</th>
                         <th>Timestamp</th>
-                        <th>Type</th>
+                        <th>{t('common.status')}</th>
                         <th style={{ textAlign: 'right' }}>Stock Before</th>
                         <th style={{ textAlign: 'right' }}>Quantity Delta</th>
                         <th style={{ textAlign: 'right' }}>Stock After</th>
-                        <th style={{ textAlign: 'center' }}>Transaction</th>
+                        <th style={{ textAlign: 'center' }}>{t('transactions.title')}</th>
                       </tr>
                     </thead>
                     <tbody>
                       {movementsData.map((m) => {
-                        const mType = formatMovementType(m.movement_type)
+                        const mType = formatMovementType(m.movement_type, t)
                         return (
                           <tr key={m.id}>
                             <td style={{ fontFamily: 'monospace' }}>#{m.id}</td>
@@ -887,7 +887,7 @@ export function Reports() {
                 className="btn btn-outline"
                 onClick={() => setMovementsModal(null)}
               >
-                Close
+                {t('common.close')}
               </button>
             </div>
           </div>

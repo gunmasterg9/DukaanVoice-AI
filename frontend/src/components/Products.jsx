@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api } from '../services/api'
+import { useI18n } from '../i18n/I18nContext'
 import {
   milliToQty,
   paiseToRupees,
@@ -10,6 +11,7 @@ import {
 } from '../utils/formatters'
 
 export function Products() {
+  const { t } = useI18n()
   const [products, setProducts] = useState([])
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
@@ -139,9 +141,9 @@ export function Products() {
       {/* Top Header */}
       <div className="section-header">
         <div>
-          <h2>Product Register</h2>
+          <h2>{t('products.title')}</h2>
           <p className="subtitle">
-            Manage your shop inventory, standard units, prices, and conversion rules.
+            {t('products.subtitle')}
           </p>
         </div>
         <button
@@ -149,7 +151,7 @@ export function Products() {
           className="btn btn-primary"
           onClick={() => setActiveModal({ type: 'add' })}
         >
-          + Add New Product
+          {t('products.add_product')}
         </button>
       </div>
 
@@ -169,7 +171,7 @@ export function Products() {
           <input
             type="text"
             className="form-input search-input"
-            placeholder="Search by name or SKU…"
+            placeholder={t('products.search_placeholder')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -193,7 +195,7 @@ export function Products() {
               setPage(0)
             }}
           >
-            <option value="">All Categories</option>
+            <option value="">{t('products.all_categories')}</option>
             {availableCategories.map((c) => (
               <option key={c} value={c}>
                 {c}
@@ -209,9 +211,9 @@ export function Products() {
               setPage(0)
             }}
           >
-            <option value="all">All Statuses</option>
-            <option value="active">Active Only</option>
-            <option value="inactive">Inactive Only</option>
+            <option value="all">{t('products.status_all')}</option>
+            <option value="active">{t('products.status_active')}</option>
+            <option value="inactive">{t('products.status_inactive')}</option>
           </select>
 
           <label className="toggle-label">
@@ -223,7 +225,7 @@ export function Products() {
                 setPage(0)
               }}
             />
-            <span>Low Stock Alert</span>
+            <span>{t('products.low_stock_only')}</span>
           </label>
         </div>
       </div>
@@ -233,23 +235,23 @@ export function Products() {
         {loading ? (
           <div className="table-loading">
             <div className="spinner" />
-            <p>Loading inventory…</p>
+            <p>{t('common.loading')}</p>
           </div>
         ) : error ? (
           <div className="table-error">
             <p>{error}</p>
             <button type="button" className="btn btn-outline" onClick={fetchProducts}>
-              Retry
+              {t('common.try_again')}
             </button>
           </div>
         ) : products.length === 0 ? (
           <div className="table-empty">
             <div className="empty-icon">📦</div>
-            <h3>No products found</h3>
+            <h3>{t('products.no_products_found')}</h3>
             <p>
               {search || categoryFilter || lowStockOnly || activeFilter !== 'all'
-                ? 'Try adjusting your search query or filters.'
-                : 'Your shop register is empty. Add your first product to begin.'}
+                ? t('products.no_products_found')
+                : t('products.subtitle')}
             </p>
             {!search && !categoryFilter && (
               <button
@@ -257,7 +259,7 @@ export function Products() {
                 className="btn btn-primary"
                 onClick={() => setActiveModal({ type: 'add' })}
               >
-                + Add First Product
+                {t('products.add_product')}
               </button>
             )}
           </div>
@@ -266,14 +268,14 @@ export function Products() {
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>Product & SKU</th>
-                  <th>Category</th>
-                  <th>Current Stock</th>
-                  <th>Base Unit</th>
-                  <th>Purchase Price</th>
-                  <th>Selling Price</th>
-                  <th>Status</th>
-                  <th className="th-actions">Actions</th>
+                  <th>{t('products.table_name')} &amp; {t('products.table_sku')}</th>
+                  <th>{t('products.table_category')}</th>
+                  <th>{t('products.table_stock')}</th>
+                  <th>{t('products.field_base_unit')}</th>
+                  <th>{t('products.table_purchase_price')}</th>
+                  <th>{t('products.table_selling_price')}</th>
+                  <th>{t('products.table_status')}</th>
+                  <th className="th-actions">{t('products.table_actions')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -296,7 +298,7 @@ export function Products() {
                             className="badge badge-warning"
                             title={`Low stock alert! Threshold: ${milliToQty(p.low_stock_threshold)}`}
                           >
-                            Low Stock
+                            {t('products.badge_low_stock')}
                           </span>
                         )}
                       </div>
@@ -306,9 +308,9 @@ export function Products() {
                     <td className="selling-price">{paiseToRupees(p.selling_price)}</td>
                     <td>
                       {p.active ? (
-                        <span className="badge badge-success">Active</span>
+                        <span className="badge badge-success">{t('products.badge_active')}</span>
                       ) : (
-                        <span className="badge badge-danger">Inactive</span>
+                        <span className="badge badge-danger">{t('products.badge_inactive')}</span>
                       )}
                     </td>
                     <td className="td-actions">
@@ -318,7 +320,7 @@ export function Products() {
                         title="View details & conversions"
                         onClick={() => setActiveModal({ type: 'view', product: p })}
                       >
-                        View
+                        {t('products.action_view')}
                       </button>
                       <button
                         type="button"
@@ -326,7 +328,7 @@ export function Products() {
                         title="Edit details"
                         onClick={() => setActiveModal({ type: 'edit', product: p })}
                       >
-                        Edit
+                        {t('products.action_edit')}
                       </button>
                       {p.active ? (
                         <button
@@ -335,7 +337,7 @@ export function Products() {
                           title="Deactivate product"
                           onClick={() => setActiveModal({ type: 'deactivate', product: p })}
                         >
-                          Deactivate
+                          {t('products.action_deactivate')}
                         </button>
                       ) : (
                         <button
@@ -344,7 +346,7 @@ export function Products() {
                           title="Reactivate product"
                           onClick={() => handleReactivate(p)}
                         >
-                          Reactivate
+                          {t('products.action_reactivate')}
                         </button>
                       )}
                     </td>
@@ -359,7 +361,7 @@ export function Products() {
         {total > pageSize && (
           <div className="pagination-bar">
             <span>
-              Showing {page * pageSize + 1}–{Math.min((page + 1) * pageSize, total)} of {total} products
+              {page * pageSize + 1}–{Math.min((page + 1) * pageSize, total)} / {total} {t('common.items')}
             </span>
             <div className="pagination-controls">
               <button
@@ -368,16 +370,16 @@ export function Products() {
                 disabled={page === 0}
                 onClick={() => setPage((p) => Math.max(0, p - 1))}
               >
-                Previous
+                {t('common.prev')}
               </button>
-              <span className="page-number">Page {page + 1}</span>
+              <span className="page-number">{t('common.page')} {page + 1}</span>
               <button
                 type="button"
                 className="btn btn-outline"
                 disabled={(page + 1) * pageSize >= total}
                 onClick={() => setPage((p) => p + 1)}
               >
-                Next
+                {t('common.next')}
               </button>
             </div>
           </div>
@@ -430,6 +432,7 @@ export function Products() {
 }
 
 function ProductFormModal({ mode, product, onClose, onSuccess }) {
+  const { t } = useI18n()
   const isEdit = mode === 'edit'
   const [formData, setFormData] = useState({
     name: product?.name || '',
@@ -510,7 +513,7 @@ function ProductFormModal({ mode, product, onClose, onSuccess }) {
     <div className="modal-backdrop">
       <div className="modal-content">
         <div className="modal-header">
-          <h3>{isEdit ? 'Edit Product' : 'Add New Product'}</h3>
+          <h3>{isEdit ? t('products.modal_edit_title') : t('products.modal_add_title')}</h3>
           <button type="button" className="close-btn" onClick={onClose}>
             ×
           </button>
@@ -521,11 +524,11 @@ function ProductFormModal({ mode, product, onClose, onSuccess }) {
         <form onSubmit={handleSubmit} className="modal-form">
           <div className="form-row">
             <div className="form-group flex-2">
-              <label>Product Name *</label>
+              <label>{t('products.field_name')}</label>
               <input
                 type="text"
                 className={`form-input ${errors.name ? 'input-error' : ''}`}
-                placeholder="e.g. Basmati Rice 1kg"
+                placeholder={t('products.field_name_placeholder')}
                 value={formData.name}
                 onChange={(e) => handleChange('name', e.target.value)}
               />
@@ -533,11 +536,11 @@ function ProductFormModal({ mode, product, onClose, onSuccess }) {
             </div>
 
             <div className="form-group flex-1">
-              <label>SKU Code *</label>
+              <label>{t('products.field_sku')}</label>
               <input
                 type="text"
                 className={`form-input ${errors.sku ? 'input-error' : ''}`}
-                placeholder="e.g. SKU-RICE-01"
+                placeholder={t('products.field_sku_placeholder')}
                 value={formData.sku}
                 onChange={(e) => handleChange('sku', e.target.value)}
               />
@@ -547,22 +550,22 @@ function ProductFormModal({ mode, product, onClose, onSuccess }) {
 
           <div className="form-row">
             <div className="form-group flex-1">
-              <label>Category</label>
+              <label>{t('products.field_category')}</label>
               <input
                 type="text"
                 className="form-input"
-                placeholder="e.g. Grains, Spices, Dairy"
+                placeholder={t('products.field_category_placeholder')}
                 value={formData.category}
                 onChange={(e) => handleChange('category', e.target.value)}
               />
             </div>
 
             <div className="form-group flex-1">
-              <label>Base Inventory Unit *</label>
+              <label>{t('products.field_base_unit')}</label>
               <input
                 type="text"
                 className={`form-input ${errors.base_unit ? 'input-error' : ''}`}
-                placeholder="e.g. kg, packet, piece, liter"
+                placeholder={t('products.field_base_unit_placeholder')}
                 value={formData.base_unit}
                 onChange={(e) => handleChange('base_unit', e.target.value)}
               />
@@ -572,7 +575,7 @@ function ProductFormModal({ mode, product, onClose, onSuccess }) {
 
           {!isEdit && (
             <div className="form-group">
-              <label>Opening Stock ({formData.base_unit || 'units'})</label>
+              <label>{t('products.field_opening_stock', { unit: formData.base_unit || 'units' })}</label>
               <input
                 type="number"
                 step="any"
@@ -582,7 +585,7 @@ function ProductFormModal({ mode, product, onClose, onSuccess }) {
                 onChange={(e) => handleChange('opening_stock', e.target.value)}
               />
               <span className="field-help">
-                Opening stock creates an auditable initial stock adjustment.
+                {t('products.field_opening_stock_help')}
               </span>
               {errors.opening_stock && (
                 <span className="field-error">{errors.opening_stock}</span>
@@ -592,7 +595,7 @@ function ProductFormModal({ mode, product, onClose, onSuccess }) {
 
           <div className="form-row">
             <div className="form-group flex-1">
-              <label>Purchase Price (₹)</label>
+              <label>{t('products.field_purchase_price')}</label>
               <input
                 type="number"
                 step="0.01"
@@ -607,7 +610,7 @@ function ProductFormModal({ mode, product, onClose, onSuccess }) {
             </div>
 
             <div className="form-group flex-1">
-              <label>Selling Price (₹)</label>
+              <label>{t('products.field_selling_price')}</label>
               <input
                 type="number"
                 step="0.01"
@@ -622,7 +625,7 @@ function ProductFormModal({ mode, product, onClose, onSuccess }) {
             </div>
 
             <div className="form-group flex-1">
-              <label>Low Stock Alert ({formData.base_unit || 'units'})</label>
+              <label>{t('products.field_low_stock_threshold', { unit: formData.base_unit || 'units' })}</label>
               <input
                 type="number"
                 step="any"
@@ -644,10 +647,10 @@ function ProductFormModal({ mode, product, onClose, onSuccess }) {
               disabled={submitting}
               onClick={onClose}
             >
-              Cancel
+              {t('common.cancel')}
             </button>
             <button type="submit" className="btn btn-primary" disabled={submitting}>
-              {submitting ? 'Saving…' : isEdit ? 'Update Product' : 'Create Product'}
+              {submitting ? t('common.saving') : isEdit ? t('common.save') : t('products.add_product')}
             </button>
           </div>
         </form>
@@ -657,6 +660,7 @@ function ProductFormModal({ mode, product, onClose, onSuccess }) {
 }
 
 function ProductDetailModal({ productId, onClose, onEdit }) {
+  const { t } = useI18n()
   const [detail, setDetail] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -767,7 +771,7 @@ function ProductDetailModal({ productId, onClose, onEdit }) {
       <div className="modal-content modal-wide">
         <div className="modal-header">
           <div>
-            <h3>Product Details</h3>
+            <h3>{t('products.modal_detail_title')}</h3>
             {detail && <span className="modal-subtitle">{detail.name} ({detail.sku})</span>}
           </div>
           <button type="button" className="close-btn" onClick={onClose}>
@@ -778,13 +782,13 @@ function ProductDetailModal({ productId, onClose, onEdit }) {
         {loading ? (
           <div className="modal-loading">
             <div className="spinner" />
-            <p>Loading details…</p>
+            <p>{t('common.loading')}</p>
           </div>
         ) : error ? (
           <div className="modal-error">
             <p>{error}</p>
             <button type="button" className="btn btn-outline" onClick={loadDetail}>
-              Retry
+              {t('common.try_again')}
             </button>
           </div>
         ) : detail ? (
@@ -792,17 +796,17 @@ function ProductDetailModal({ productId, onClose, onEdit }) {
             {/* Overview Stats */}
             <div className="detail-grid">
               <div className="detail-stat">
-                <span className="stat-label">Current Stock</span>
+                <span className="stat-label">{t('products.table_stock')}</span>
                 <span className="stat-val">
                   {milliToQty(detail.stock_qty)} {detail.base_unit}
                 </span>
                 {detail.is_low_stock && (
-                  <span className="badge badge-warning">Low Stock Alert</span>
+                  <span className="badge badge-warning">{t('products.badge_low_stock')}</span>
                 )}
               </div>
 
               <div className="detail-stat">
-                <span className="stat-label">Selling Price</span>
+                <span className="stat-label">{t('products.table_selling_price')}</span>
                 <span className="stat-val selling-price">
                   {paiseToRupees(detail.selling_price)}
                 </span>
@@ -810,13 +814,13 @@ function ProductDetailModal({ productId, onClose, onEdit }) {
               </div>
 
               <div className="detail-stat">
-                <span className="stat-label">Purchase Price</span>
+                <span className="stat-label">{t('products.table_purchase_price')}</span>
                 <span className="stat-val">{paiseToRupees(detail.purchase_price)}</span>
                 <span className="stat-sub">per {detail.base_unit}</span>
               </div>
 
               <div className="detail-stat">
-                <span className="stat-label">Low Stock Threshold</span>
+                <span className="stat-label">{t('products.field_low_stock_threshold', { unit: detail.base_unit })}</span>
                 <span className="stat-val">
                   {milliToQty(detail.low_stock_threshold)} {detail.base_unit}
                 </span>
@@ -826,16 +830,16 @@ function ProductDetailModal({ productId, onClose, onEdit }) {
             {/* Metadata Table */}
             <div className="meta-box">
               <div className="meta-row">
-                <span className="meta-k">Category:</span>
-                <span className="meta-v">{detail.category || 'General'}</span>
+                <span className="meta-k">{t('products.table_category')}:</span>
+                <span className="meta-v">{detail.category || '—'}</span>
               </div>
               <div className="meta-row">
-                <span className="meta-k">Status:</span>
+                <span className="meta-k">{t('products.table_status')}:</span>
                 <span className="meta-v">
                   {detail.active ? (
-                    <span className="badge badge-success">Active</span>
+                    <span className="badge badge-success">{t('products.badge_active')}</span>
                   ) : (
-                    <span className="badge badge-danger">Inactive</span>
+                    <span className="badge badge-danger">{t('products.badge_inactive')}</span>
                   )}
                 </span>
               </div>
@@ -853,10 +857,9 @@ function ProductDetailModal({ productId, onClose, onEdit }) {
             <div className="conversions-section">
               <div className="conversions-header">
                 <div>
-                  <h4>Explicit Unit Conversions</h4>
+                  <h4>{t('products.modal_conversions_title')}</h4>
                   <p className="field-help">
-                    Define conversion rules so shopkeepers can sell or purchase in boxes,
-                    bags, or packets while tracking in {detail.base_unit}.
+                    {t('products.conversions_subtitle')}
                   </p>
                 </div>
               </div>
@@ -881,23 +884,23 @@ function ProductDetailModal({ productId, onClose, onEdit }) {
                         title="Delete rule"
                         onClick={() => handleDeleteConversion(conv.id)}
                       >
-                        Remove
+                        {t('common.delete')}
                       </button>
                     </div>
                   ))}
                 </div>
               ) : (
                 <div className="empty-conversions">
-                  No conversion rules defined yet.
+                  {t('products.no_conversions')}
                 </div>
               )}
 
               {/* Add Conversion Form */}
               <form onSubmit={handleAddConversion} className="add-conv-form">
-                <h5>+ Add Unit Conversion Rule</h5>
+                <h5>+ {t('products.btn_add_conversion')}</h5>
                 <div className="conv-form-row">
                   <div className="conv-field">
-                    <label>1 Source Unit</label>
+                    <label>{t('products.field_from_unit')}</label>
                     <input
                       type="text"
                       className={`form-input ${convErrors.from_unit ? 'input-error' : ''}`}
@@ -915,7 +918,7 @@ function ProductDetailModal({ productId, onClose, onEdit }) {
                   <span className="conv-equals">=</span>
 
                   <div className="conv-field">
-                    <label>Equals (Qty)</label>
+                    <label>{t('products.table_factor')}</label>
                     <input
                       type="number"
                       step="any"
@@ -933,7 +936,7 @@ function ProductDetailModal({ productId, onClose, onEdit }) {
                   </div>
 
                   <div className="conv-field">
-                    <label>Target Unit</label>
+                    <label>{t('products.field_to_unit')}</label>
                     <input
                       type="text"
                       className={`form-input ${convErrors.to_unit ? 'input-error' : ''}`}
@@ -953,7 +956,7 @@ function ProductDetailModal({ productId, onClose, onEdit }) {
                     className="btn btn-outline conv-submit-btn"
                     disabled={convSubmitting}
                   >
-                    {convSubmitting ? 'Adding…' : 'Add Rule'}
+                    {convSubmitting ? t('common.loading') : t('products.btn_add_conversion')}
                   </button>
                 </div>
               </form>
@@ -968,10 +971,10 @@ function ProductDetailModal({ productId, onClose, onEdit }) {
                   onEdit()
                 }}
               >
-                Edit Product
+                {t('products.action_edit')}
               </button>
               <button type="button" className="btn btn-outline" onClick={onClose}>
-                Close
+                {t('common.close')}
               </button>
             </div>
           </div>
@@ -982,35 +985,31 @@ function ProductDetailModal({ productId, onClose, onEdit }) {
 }
 
 function DeactivateConfirmModal({ product, onClose, onConfirm }) {
+  const { t } = useI18n()
   return (
     <div className="modal-backdrop">
       <div className="modal-content modal-sm">
         <div className="modal-header">
-          <h3>Deactivate Product</h3>
+          <h3>{t('products.modal_deactivate_title')}</h3>
           <button type="button" className="close-btn" onClick={onClose}>
             ×
           </button>
         </div>
         <div className="modal-body">
           <p>
-            Are you sure you want to deactivate <strong>{product.name}</strong> (
-            {product.sku})?
-          </p>
-          <p className="field-help warning-text">
-            This product will be hidden from everyday sales and active lists, but all
-            historical inventory movements and register records are permanently preserved.
+            {t('products.deactivate_warning', { name: product.name, sku: product.sku })}
           </p>
         </div>
         <div className="modal-actions">
           <button type="button" className="btn btn-outline" onClick={onClose}>
-            Cancel
+            {t('common.cancel')}
           </button>
           <button
             type="button"
             className="btn btn-accent btn-danger-tone"
             onClick={onConfirm}
           >
-            Yes, Deactivate
+            {t('products.btn_confirm_deactivate')}
           </button>
         </div>
       </div>

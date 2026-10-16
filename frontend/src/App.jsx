@@ -4,20 +4,24 @@ import { api } from './services/api'
 import { Products } from './components/Products'
 import { Transactions } from './components/Transactions'
 import { Reports } from './components/Reports'
+import { CommandBar } from './components/CommandBar'
+import { LanguageSelector } from './i18n/LanguageSelector'
+import { useI18n } from './i18n/I18nContext'
 import './index.css'
 
-const PAGES = [
-  { id: 'dashboard', label: 'Dashboard' },
-  { id: 'products', label: 'Products' },
-  { id: 'transactions', label: 'Transactions' },
-  { id: 'reports', label: 'Reports' },
-]
-
 function App() {
+  const { t } = useI18n()
   const [activePage, setActivePage] = useState('dashboard')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [data, setData] = useState(null)
+
+  const pages = [
+    { id: 'dashboard', label: t('nav.dashboard') },
+    { id: 'products', label: t('nav.products') },
+    { id: 'transactions', label: t('nav.transactions') },
+    { id: 'reports', label: t('nav.reports') },
+  ]
 
   function loadHealth() {
     setLoading(true)
@@ -71,34 +75,39 @@ function App() {
             द
           </div>
           <div>
-            <h1>DukaanVoice AI</h1>
-            <div className="app-logo-tagline">Gujarati-first shop register</div>
+            <h1>{t('app.title')}</h1>
+            <div className="app-logo-tagline">{t('app.tagline')}</div>
           </div>
         </div>
-        <nav className="app-nav" aria-label="Main">
-          {PAGES.map((page) => (
-            <button
-              key={page.id}
-              type="button"
-              className={activePage === page.id ? 'active' : ''}
-              onClick={() => setActivePage(page.id)}
-            >
-              {page.label}
-            </button>
-          ))}
-        </nav>
+
+        <div className="app-header-controls">
+          <nav className="app-nav" aria-label="Main Navigation">
+            {pages.map((page) => (
+              <button
+                key={page.id}
+                type="button"
+                className={activePage === page.id ? 'active' : ''}
+                onClick={() => setActivePage(page.id)}
+              >
+                {page.label}
+              </button>
+            ))}
+          </nav>
+          <LanguageSelector />
+        </div>
       </header>
+
+      {/* Multilingual Natural Command & Voice Bar */}
+      <div className="command-bar-section">
+        <CommandBar onNavigate={setActivePage} />
+      </div>
 
       <main className="app-main">
         {activePage === 'dashboard' && (
           <div className="dashboard">
             <div className="welcome-section">
-              <h2>Business Reports &amp; Reconciliation Active</h2>
-              <p>
-                Phase 4 provides daily sales analytics, purchase expenditure breakdown,
-                product sales totals, inventory valuation, and mathematical ledger reconciliation.
-                Voice and AI interpretation remain in later phases.
-              </p>
+              <h2>{t('dashboard.welcome_title')}</h2>
+              <p>{t('dashboard.welcome_desc')}</p>
             </div>
 
             <div className="status-grid">
@@ -113,12 +122,12 @@ function App() {
                   )}
                 </div>
                 <div className="status-info">
-                  <h3>API health</h3>
+                  <h3>{t('dashboard.api_health')}</h3>
                   <p>{health.detail}</p>
                   <span className={`badge badge-${health.tone}`}>{health.label}</span>
                   {health.status === 'error' && (
                     <button type="button" className="btn btn-outline retry" onClick={loadHealth}>
-                      Try again
+                      {t('dashboard.try_again')}
                     </button>
                   )}
                 </div>
@@ -127,18 +136,18 @@ function App() {
               <div className="status-card">
                 <div className="status-icon database">⌂</div>
                 <div className="status-info">
-                  <h3>SQLite register</h3>
-                  <p>Catalog, inventory ledger, and transactions active.</p>
-                  <span className="badge badge-success">active</span>
+                  <h3>{t('dashboard.sqlite_register')}</h3>
+                  <p>{t('dashboard.sqlite_desc')}</p>
+                  <span className="badge badge-success">{t('dashboard.active')}</span>
                 </div>
               </div>
 
               <div className="status-card">
                 <div className="status-icon phase">4</div>
                 <div className="status-info">
-                  <h3>Current phase</h3>
-                  <p>Reports &amp; reconciliation active. Voice/AI deferred.</p>
-                  <span className="badge badge-info">phase 4</span>
+                  <h3>{t('dashboard.current_phase')}</h3>
+                  <p>{t('dashboard.current_phase_desc')}</p>
+                  <span className="badge badge-info">22 languages</span>
                 </div>
               </div>
             </div>
@@ -147,54 +156,48 @@ function App() {
             <div className="status-grid" style={{ marginTop: 'var(--space-md)' }}>
               <div className="card quick-actions-card">
                 <div className="card-header">
-                  <h3 className="card-title">Product Register</h3>
+                  <h3 className="card-title">{t('dashboard.card_products_title')}</h3>
                 </div>
-                <p className="placeholder-copy">
-                  Manage shop items, standard inventory units, purchase/selling prices, and unit conversions.
-                </p>
+                <p className="placeholder-copy">{t('dashboard.card_products_desc')}</p>
                 <div style={{ marginTop: 'var(--space-md)' }}>
                   <button
                     type="button"
                     className="btn btn-outline"
                     onClick={() => setActivePage('products')}
                   >
-                    Open Products →
+                    {t('dashboard.card_products_action')}
                   </button>
                 </div>
               </div>
 
               <div className="card quick-actions-card">
                 <div className="card-header">
-                  <h3 className="card-title">Transaction Ledger</h3>
+                  <h3 className="card-title">{t('dashboard.card_trans_title')}</h3>
                 </div>
-                <p className="placeholder-copy">
-                  Record sales drafts, verify order totals, confirm atomic stock deductions, and track purchases.
-                </p>
+                <p className="placeholder-copy">{t('dashboard.card_trans_desc')}</p>
                 <div style={{ marginTop: 'var(--space-md)' }}>
                   <button
                     type="button"
                     className="btn btn-outline"
                     onClick={() => setActivePage('transactions')}
                   >
-                    Open Transactions →
+                    {t('dashboard.card_trans_action')}
                   </button>
                 </div>
               </div>
 
               <div className="card quick-actions-card">
                 <div className="card-header">
-                  <h3 className="card-title">Reports &amp; Audit</h3>
+                  <h3 className="card-title">{t('dashboard.card_reports_title')}</h3>
                 </div>
-                <p className="placeholder-copy">
-                  View daily sales revenue, purchase ledger, inventory stock valuation, and stock reconciliation.
-                </p>
+                <p className="placeholder-copy">{t('dashboard.card_reports_desc')}</p>
                 <div style={{ marginTop: 'var(--space-md)' }}>
                   <button
                     type="button"
                     className="btn btn-primary"
                     onClick={() => setActivePage('reports')}
                   >
-                    Open Reports →
+                    {t('dashboard.card_reports_action')}
                   </button>
                 </div>
               </div>
