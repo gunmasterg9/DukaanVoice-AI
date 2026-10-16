@@ -7,6 +7,8 @@ export const brx = {
     tagline: 'गोबां रावयारि दिजिटल दुकान लेजाब',
   },
   nav: {
+    quick_sale: 'Quick Sale',
+    udhaar_khata: 'Udhaar Khata',
     dashboard: 'डेशबर्ड',
     products: 'मुवाफोर (सामान)',
     transactions: 'लेजाब (फालांगि)',

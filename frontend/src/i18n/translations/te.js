@@ -7,6 +7,8 @@ export const te = {
     tagline: 'బహుభాషా డిజిటల్ దుకాణం ఖాతా పుస్తకం',
   },
   nav: {
+    quick_sale: 'త్వరిత విక్రయం',
+    udhaar_khata: 'అప్పు ఖాతా',
     dashboard: 'డాష్‌బోర్డ్',
     products: 'వస్తువులు',
     transactions: 'లావాదేవీలు (ఖాతా)',

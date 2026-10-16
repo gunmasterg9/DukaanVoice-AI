@@ -8,6 +8,7 @@ from typing import Any, List, Optional
 from fastapi import APIRouter, HTTPException, Query, status
 
 from app.database import connection
+from app.routers.transactions import _calculate_base_quantity, _row_to_transaction_dict
 from app.schemas.health import ErrorResponse
 from app.schemas.product import (
     ProductCreate,
@@ -15,10 +16,12 @@ from app.schemas.product import (
     ProductListResponse,
     ProductResponse,
     ProductUpdate,
+    ReorderDraftRequest,
     UnitConversionCreate,
     UnitConversionResponse,
     UnitConversionUpdate,
 )
+from app.schemas.transaction import TransactionResponse
 
 router = APIRouter(prefix="/api/products", tags=["products"])
 
@@ -545,3 +548,119 @@ def delete_conversion(product_id: int, conversion_id: int) -> dict[str, str]:
             (conversion_id, product_id),
         )
         return {"status": "ok", "message": "Unit conversion deleted."}
+
+
+@router.post(
+    "/reorder-draft",
+    response_model=TransactionResponse,
+    status_code=status.HTTP_201_CREATED,
+    responses={
+        400: {"model": ErrorResponse},
+        404: {"model": ErrorResponse},
+    },
+)
+def prepare_reorder_draft(
+    payload: Optional[ReorderDraftRequest] = None,
+) -> TransactionResponse:
+    """Prepare a purchase transaction draft for low-stock items.
+
+    If items are specified in payload, reorders those specific products.
+    If payload or payload.items is empty, automatically identifies all active products
+    where current stock <= low_stock_threshold, and calculates suggested reorder quantities.
+    """
+    with connection() as conn:
+        items_to_order: list[tuple[int, int, str, int, int]] = []
+
+        if payload and payload.items:
+            for it in payload.items:
+                p = conn.execute(
+                    "SELECT * FROM products WHERE id = ?", (it.product_id,)
+                ).fetchone()
+                if not p:
+                    raise HTTPException(
+                        status_code=status.HTTP_404_NOT_FOUND,
+                        detail=f"Product ID {it.product_id} not found.",
+                    )
+                if not p["active"]:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail=f"Product '{p['name']}' is inactive.",
+                    )
+                qty = it.quantity
+                if qty is None or qty <= 0:
+                    stock_qty = int(p["stock_qty"])
+                    thresh = int(p["low_stock_threshold"])
+                    qty = max(1000, (thresh * 2) - stock_qty)
+                unit = it.unit or str(p["base_unit"])
+                price = it.unit_price
+                if price is None or price <= 0:
+                    price = (
+                        int(p["purchase_price"])
+                        if int(p["purchase_price"]) > 0
+                        else int(p["selling_price"])
+                    )
+
+                # Verify unit conversion
+                _calculate_base_quantity(
+                    conn=conn,
+                    product_id=p["id"],
+                    product_name=p["name"],
+                    base_unit=p["base_unit"],
+                    line_unit=unit,
+                    line_quantity_milli=qty,
+                )
+                line_total = (qty * price) // 1000
+                items_to_order.append((int(p["id"]), qty, unit, price, line_total))
+        else:
+            low_products = conn.execute(
+                "SELECT * FROM products WHERE active = 1 AND stock_qty <= low_stock_threshold ORDER BY name ASC"
+            ).fetchall()
+            if not low_products:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="No low-stock products found to reorder.",
+                )
+            for p in low_products:
+                stock_qty = int(p["stock_qty"])
+                thresh = int(p["low_stock_threshold"])
+                qty = max(1000, (thresh * 2) - stock_qty)
+                unit = str(p["base_unit"])
+                price = (
+                    int(p["purchase_price"])
+                    if int(p["purchase_price"]) > 0
+                    else int(p["selling_price"])
+                )
+                line_total = (qty * price) // 1000
+                items_to_order.append((int(p["id"]), qty, unit, price, line_total))
+
+        instruction = (
+            payload.note
+            if (payload and payload.note)
+            else "Low-stock reorder purchase draft"
+        )
+        cursor = conn.execute(
+            """
+            INSERT INTO transactions (
+                type, status, idempotency_key, original_instruction,
+                payment_method, customer_id, created_at
+            )
+            VALUES ('purchase', 'draft', NULL, ?, 'cash', NULL, datetime('now'))
+            """,
+            (instruction,),
+        )
+        tx_id = cursor.lastrowid
+
+        for p_id, qty, unit, price, total in items_to_order:
+            conn.execute(
+                """
+                INSERT INTO transaction_items (transaction_id, product_id, quantity, unit, unit_price, line_total)
+                VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (tx_id, p_id, qty, unit, price, total),
+            )
+
+        tx_row = conn.execute(
+            "SELECT * FROM transactions WHERE id = ?", (tx_id,)
+        ).fetchone()
+        assert tx_row is not None
+        return TransactionResponse(**_row_to_transaction_dict(conn, tx_row))

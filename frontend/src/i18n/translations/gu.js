@@ -8,6 +8,8 @@ export const gu = {
     tagline: 'ગુજરાતી-પ્રથમ બહુભાષી ડિજિટલ દુકાન ચોપડો',
   },
   nav: {
+    quick_sale: 'ઝડપી વેચાણ',
+    udhaar_khata: 'ઉધાર ખાતું',
     dashboard: 'ડેશબોર્ડ',
     products: 'માલસામાન (પ્રોડક્ટ્સ)',
     transactions: 'ચોપડો (વ્યવહારો)',

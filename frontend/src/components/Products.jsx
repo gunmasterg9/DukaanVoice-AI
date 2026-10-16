@@ -136,6 +136,22 @@ export function Products() {
       })
   }
 
+  const [reorderLoading, setReorderLoading] = useState(false)
+  const handlePrepareReorderDraft = async () => {
+    setReorderLoading(true)
+    setError(null)
+    try {
+      const draft = await api.prepareReorderDraft()
+      showNotice(
+        `${t('low_stock.draft_success')} (Draft #${draft.id} - ${draft.items?.length || 0} items)`
+      )
+    } catch (err) {
+      showNotice(err.message || 'Failed to prepare purchase draft.', 'danger')
+    } finally {
+      setReorderLoading(false)
+    }
+  }
+
   return (
     <div className="products-view">
       {/* Top Header */}
@@ -227,6 +243,16 @@ export function Products() {
             />
             <span>{t('products.low_stock_only')}</span>
           </label>
+
+          <button
+            type="button"
+            className="btn btn-outline"
+            style={{ marginLeft: 'auto' }}
+            disabled={reorderLoading}
+            onClick={handlePrepareReorderDraft}
+          >
+            {reorderLoading ? <span className="spinner" /> : `📋 ${t('low_stock.reorder_draft_btn')}`}
+          </button>
         </div>
       </div>
 

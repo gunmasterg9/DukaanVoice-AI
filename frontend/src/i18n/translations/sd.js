@@ -7,6 +7,8 @@ export const sd = {
     tagline: 'گھڻ-ٻوليائي ڊجيٽل دڪان کاتو',
   },
   nav: {
+    quick_sale: 'Quick Sale',
+    udhaar_khata: 'Udhaar Khata',
     dashboard: 'ڊيش بورڊ',
     products: 'سامان (شيون)',
     transactions: 'ڏيتي ليتي (کاتو)',

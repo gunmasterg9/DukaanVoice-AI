@@ -7,6 +7,8 @@ export const sa = {
     tagline: 'बहुभाषीय-अङ्कीय-विपणि-लेख्यपुस्तकम्',
   },
   nav: {
+    quick_sale: 'Quick Sale',
+    udhaar_khata: 'Udhaar Khata',
     dashboard: 'फलकम्',
     products: 'वस्तूनि (पण्यम्)',
     transactions: 'व्यवहाराः (लेख्यम्)',

@@ -8,6 +8,8 @@ export const ur = {
     tagline: 'کثیر لسانی ڈیجیٹل دکان کھاتہ',
   },
   nav: {
+    quick_sale: 'Quick Sale',
+    udhaar_khata: 'Udhaar Khata',
     dashboard: 'ڈیش بورڈ',
     products: 'اشیاء (پروڈکٹس)',
     transactions: 'لین دین (کھاتہ)',

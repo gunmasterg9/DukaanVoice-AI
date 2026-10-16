@@ -7,6 +7,8 @@ export const ml = {
     tagline: 'ബഹുഭാഷാ ഡിജിറ്റൽ കട രജിസ്റ്റർ',
   },
   nav: {
+    quick_sale: 'Quick Sale',
+    udhaar_khata: 'Udhaar Khata',
     dashboard: 'ഡാഷ്‌ബോർഡ്',
     products: 'സാധനങ്ങൾ (ഉൽപ്പന്നങ്ങൾ)',
     transactions: 'ഇടപാടുകൾ (രജിസ്റ്റർ)',

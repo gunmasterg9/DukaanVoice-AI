@@ -7,6 +7,8 @@ export const bn = {
     tagline: 'বহুভাষিক ডিজিটাল দোকান খাতা',
   },
   nav: {
+    quick_sale: 'দ্রুত বিক্রয়',
+    udhaar_khata: 'বাকি খাতা',
     dashboard: 'ড্যাশবোর্ড',
     products: 'পণ্যতালিকা',
     transactions: 'লেনদেন (খাতা)',

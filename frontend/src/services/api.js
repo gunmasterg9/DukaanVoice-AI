@@ -190,4 +190,50 @@ export const api = {
     const qs = query.toString()
     return request(`/reports/inventory/movements${qs ? `?${qs}` : ''}`)
   },
+
+  // Low-stock reorder draft
+  prepareReorderDraft: (data = {}) =>
+    request('/products/reorder-draft', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  // Customers & Udhaar Khata
+  getCustomers: (params = {}) => {
+    const query = new URLSearchParams()
+    if (params.query) query.set('query', params.query)
+    if (params.active !== undefined && params.active !== null) {
+      query.set('active', String(params.active))
+    }
+    if (params.limit) query.set('limit', String(params.limit))
+    if (params.offset) query.set('offset', String(params.offset))
+    const qs = query.toString()
+    return request(`/customers${qs ? `?${qs}` : ''}`)
+  },
+
+  getCustomer: (id) => request(`/customers/${id}`),
+
+  createCustomer: (data) =>
+    request('/customers', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  updateCustomer: (id, data) =>
+    request(`/customers/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  deactivateCustomer: (id) =>
+    request(`/customers/${id}/deactivate`, {
+      method: 'PATCH',
+    }),
+
+  recordCustomerPayment: (customerId, data) =>
+    request(`/customers/${customerId}/payments`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
 }
+

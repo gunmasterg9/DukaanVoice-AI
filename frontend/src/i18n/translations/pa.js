@@ -7,6 +7,8 @@ export const pa = {
     tagline: 'ਬਹੁ-ਭਾਸ਼ਾਈ ਡਿਜੀਟਲ ਦੁਕਾਨ ਵਹੀ-ਖਾਤਾ',
   },
   nav: {
+    quick_sale: 'Quick Sale',
+    udhaar_khata: 'Udhaar Khata',
     dashboard: 'ਡੈਸ਼ਬੋਰਡ',
     products: 'ਸਾਮਾਨ (ਵਸਤਾਂ)',
     transactions: 'ਵਹੀ-ਖਾਤਾ (ਲੈਣ-ਦੇਣ)',

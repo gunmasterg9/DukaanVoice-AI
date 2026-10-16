@@ -7,6 +7,8 @@ export const as = {
     tagline: 'বহুভাষিক ডিজিটেল দোকান বহী',
   },
   nav: {
+    quick_sale: 'Quick Sale',
+    udhaar_khata: 'Udhaar Khata',
     dashboard: 'ডেশ্ববৰ্ড',
     products: 'সামগ্ৰী (পণ্য)',
     transactions: 'লেনদেন (বহী)',

@@ -26,6 +26,16 @@ class TransactionCreate(BaseModel):
     items: Annotated[List[TransactionItemCreate], Field(min_length=1, description="List of line items")]
     idempotency_key: Annotated[Optional[str], Field(default=None, max_length=100, description="Unique client key")]
     original_instruction: Annotated[str, Field(default="", max_length=500, description="User instruction / note")]
+    payment_method: Annotated[str, Field(default="cash", description="Payment method: cash, upi, credit")] = "cash"
+    customer_id: Optional[int] = Field(default=None, description="Customer ID for credit sales (Udhaar)")
+
+    @field_validator("payment_method")
+    @classmethod
+    def validate_payment_method(cls, value: str) -> str:
+        clean = value.strip().lower()
+        if clean not in ("cash", "upi", "credit"):
+            raise ValueError("Payment method must be cash, upi, or credit.")
+        return clean
 
     @field_validator("idempotency_key")
     @classmethod
@@ -66,6 +76,9 @@ class TransactionResponse(BaseModel):
     id: int
     type: str
     status: str
+    payment_method: str = "cash"
+    customer_id: Optional[int] = None
+    customer_name: Optional[str] = None
     idempotency_key: Optional[str]
     original_instruction: str
     created_at: str

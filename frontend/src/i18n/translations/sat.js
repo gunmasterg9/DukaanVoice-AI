@@ -8,6 +8,8 @@ export const sat = {
     tagline: 'ᱟᱭᱢᱟ ᱯᱟᱹᱨᱥᱤ ᱰᱤᱡᱤᱴᱟᱞ ᱫᱩᱠᱟᱱ ᱵᱟᱹᱦᱤ',
   },
   nav: {
+    quick_sale: 'Quick Sale',
+    udhaar_khata: 'Udhaar Khata',
     dashboard: 'ᱰᱮᱥᱵᱳᱨᱰ',
     products: 'ᱡᱤᱱᱤᱥ ᱠᱚ (ᱢᱟᱞ)',
     transactions: 'ᱠᱟᱨᱵᱟᱨ (ᱞᱮᱠᱷᱟ)',

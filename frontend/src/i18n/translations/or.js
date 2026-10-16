@@ -7,6 +7,8 @@ export const or = {
     tagline: 'ବହୁଭାଷୀ ଡିଜିଟାଲ ଦୋକାନ ଖାତା',
   },
   nav: {
+    quick_sale: 'Quick Sale',
+    udhaar_khata: 'Udhaar Khata',
     dashboard: 'ଡ୍ୟାସବୋର୍ଡ',
     products: 'ସାମଗ୍ରୀ (ଦ୍ରବ୍ୟ)',
     transactions: 'କାରବାର (ଖାତା)',

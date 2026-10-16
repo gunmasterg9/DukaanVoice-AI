@@ -7,6 +7,8 @@ export const kn = {
     tagline: 'ಬಹುಭಾಷಾ ಡಿಜಿಟಲ್ ಅಂಗಡಿ ಲೆಕ್ಕಪುಸ್ತಕ',
   },
   nav: {
+    quick_sale: 'ತ್ವರಿತ ಮಾರಾಟ',
+    udhaar_khata: 'ಉದ್ಧಾರ ಖಾತೆ',
     dashboard: 'ಡ್ಯಾಶ್‌ಬೋರ್ಡ್',
     products: 'ಸರಕುಗಳು (ಉತ್ಪನ್ನಗಳು)',
     transactions: 'ವಹಿವಾಟುಗಳು (ಲೆಕ್ಕ)',

@@ -7,6 +7,8 @@ export const kok = {
     tagline: 'बहुभाशी डिजिटल दुकान वहीखातें',
   },
   nav: {
+    quick_sale: 'Quick Sale',
+    udhaar_khata: 'Udhaar Khata',
     dashboard: 'डॅशबोर्ड',
     products: 'वस्तू (उत्पादनां)',
     transactions: 'वहीखातें (वेव्हार)',

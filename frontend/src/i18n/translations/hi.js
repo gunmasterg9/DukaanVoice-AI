@@ -8,6 +8,8 @@ export const hi = {
     tagline: 'बहुभाषी डिजिटल दुकान बहीखाता',
   },
   nav: {
+    quick_sale: 'त्वरित बिक्री',
+    udhaar_khata: 'उधार खाता',
     dashboard: 'डैशबोर्ड',
     products: 'सामान (उत्पाद)',
     transactions: 'बहीखाता (लेनदेन)',

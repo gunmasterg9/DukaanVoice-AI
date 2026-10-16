@@ -7,6 +7,8 @@ export const ks = {
     tagline: 'واریاہن زَبانَن مَنٛز ڈیجیٹَل دکان کھاتہٕ',
   },
   nav: {
+    quick_sale: 'Quick Sale',
+    udhaar_khata: 'Udhaar Khata',
     dashboard: 'ڈیش بورڈ',
     products: 'چیٖز (پروڈکٹس)',
     transactions: 'لین دین (کھاتہٕ)',

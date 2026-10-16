@@ -7,6 +7,8 @@ export const ne = {
     tagline: 'बहुभाषी डिजिटल पसल खाता',
   },
   nav: {
+    quick_sale: 'Quick Sale',
+    udhaar_khata: 'Udhaar Khata',
     dashboard: 'ड्यासबोर्ड',
     products: 'सामानहरू (वस्तु)',
     transactions: 'खाता (कारोबार)',

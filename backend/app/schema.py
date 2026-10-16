@@ -10,7 +10,7 @@ Stock and money conventions (documented in docs/DATABASE_SCHEMA.md):
 
 from __future__ import annotations
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 
 REQUIRED_TABLES = (
     "schema_migrations",
@@ -19,6 +19,8 @@ REQUIRED_TABLES = (
     "transactions",
     "transaction_items",
     "inventory_movements",
+    "customers",
+    "customer_ledger",
 )
 
 MIGRATION_001_STATEMENTS = (
@@ -147,6 +149,53 @@ MIGRATION_002_STATEMENTS = (
     "CREATE INDEX idx_products_sku ON products(sku)",
     "CREATE INDEX idx_products_active ON products(active)",
     "CREATE INDEX idx_products_category ON products(category)",
+)
+
+MIGRATION_003_STATEMENTS = (
+    """
+    CREATE TABLE customers (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL CHECK (length(trim(name)) > 0),
+        phone TEXT NOT NULL DEFAULT '',
+        address TEXT NOT NULL DEFAULT '',
+        credit_limit INTEGER NOT NULL DEFAULT 0 CHECK (credit_limit >= 0),
+        active INTEGER NOT NULL DEFAULT 1 CHECK (active IN (0, 1)),
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )
+    """,
+    "CREATE INDEX idx_customers_name ON customers(name)",
+    "CREATE INDEX idx_customers_phone ON customers(phone)",
+    "CREATE INDEX idx_customers_active ON customers(active)",
+    """
+    ALTER TABLE transactions
+    ADD COLUMN payment_method TEXT NOT NULL DEFAULT 'cash'
+    CHECK (payment_method IN ('cash', 'upi', 'credit'))
+    """,
+    """
+    ALTER TABLE transactions
+    ADD COLUMN customer_id INTEGER REFERENCES customers(id)
+    """,
+    "CREATE INDEX idx_transactions_customer ON transactions(customer_id)",
+    "CREATE INDEX idx_transactions_payment_method ON transactions(payment_method)",
+    """
+    CREATE TABLE customer_ledger (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        customer_id INTEGER NOT NULL,
+        transaction_id INTEGER,
+        entry_type TEXT NOT NULL CHECK (entry_type IN ('credit_sale', 'payment', 'adjustment')),
+        amount INTEGER NOT NULL CHECK (amount > 0),
+        balance_after INTEGER NOT NULL,
+        payment_method TEXT CHECK (payment_method IS NULL OR payment_method IN ('cash', 'upi', 'bank_transfer', 'other')),
+        notes TEXT NOT NULL DEFAULT '',
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        FOREIGN KEY (customer_id) REFERENCES customers(id),
+        FOREIGN KEY (transaction_id) REFERENCES transactions(id)
+    )
+    """,
+    "CREATE INDEX idx_customer_ledger_customer ON customer_ledger(customer_id)",
+    "CREATE INDEX idx_customer_ledger_transaction ON customer_ledger(transaction_id)",
+    "CREATE INDEX idx_customer_ledger_created ON customer_ledger(created_at)",
 )
 
 

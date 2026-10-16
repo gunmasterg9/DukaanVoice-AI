@@ -7,6 +7,8 @@ export const mni = {
     tagline: 'লোল ময়ামগী ওইবা দিজিতেল দোকান খাতা',
   },
   nav: {
+    quick_sale: 'Quick Sale',
+    udhaar_khata: 'Udhaar Khata',
     dashboard: 'দেশবোর্দ',
     products: 'পোৎলমশিং (আইতেম)',
     transactions: 'লেনদেন (খাতা)',

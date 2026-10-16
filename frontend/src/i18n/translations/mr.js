@@ -7,6 +7,8 @@ export const mr = {
     tagline: 'बहुभाषिक डिजिटल दुकान वहीखाते',
   },
   nav: {
+    quick_sale: 'जलद विक्री',
+    udhaar_khata: 'उधारी खाते',
     dashboard: 'डॅशबोर्ड',
     products: 'वस्तू (उत्पादने)',
     transactions: 'वहीखाते (व्यवहार)',

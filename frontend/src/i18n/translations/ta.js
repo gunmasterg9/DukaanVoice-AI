@@ -7,6 +7,8 @@ export const ta = {
     tagline: 'பன்மொழி டிஜிட்டல் கடைப் பதிவேடு',
   },
   nav: {
+    quick_sale: 'விரைவு விற்பனை',
+    udhaar_khata: 'கடன் கணக்கு',
     dashboard: 'முகப்பு பலகை',
     products: 'பொருட்கள்',
     transactions: 'பரிவர்த்தனைகள்',

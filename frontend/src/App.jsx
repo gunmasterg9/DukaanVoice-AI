@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { healthIndicatorState } from './healthState'
 import { api } from './services/api'
 import { Products } from './components/Products'
+import { QuickSale } from './components/QuickSale'
+import { UdhaarKhata } from './components/UdhaarKhata'
 import { Transactions } from './components/Transactions'
 import { Reports } from './components/Reports'
 import { CommandBar } from './components/CommandBar'
@@ -11,15 +13,17 @@ import './index.css'
 
 function App() {
   const { t } = useI18n()
-  const [activePage, setActivePage] = useState('dashboard')
+  const [activePage, setActivePage] = useState('quick_sale')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [data, setData] = useState(null)
 
   const pages = [
+    { id: 'quick_sale', label: `⚡ ${t('nav.quick_sale')}` },
     { id: 'dashboard', label: t('nav.dashboard') },
     { id: 'products', label: t('nav.products') },
     { id: 'transactions', label: t('nav.transactions') },
+    { id: 'udhaar_khata', label: `📒 ${t('nav.udhaar_khata')}` },
     { id: 'reports', label: t('nav.reports') },
   ]
 
@@ -205,8 +209,10 @@ function App() {
           </div>
         )}
 
+        {activePage === 'quick_sale' && <QuickSale />}
         {activePage === 'products' && <Products />}
         {activePage === 'transactions' && <Transactions />}
+        {activePage === 'udhaar_khata' && <UdhaarKhata />}
         {activePage === 'reports' && <Reports />}
       </main>
     </div>

@@ -7,6 +7,8 @@ export const doi = {
     tagline: 'बहुभाषी डिजिटल दुकान बहीखाता',
   },
   nav: {
+    quick_sale: 'Quick Sale',
+    udhaar_khata: 'Udhaar Khata',
     dashboard: 'डैशबोर्ड',
     products: 'चीजां (सामान)',
     transactions: 'बहीखाता (लेनदेन)',

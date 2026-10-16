@@ -158,10 +158,22 @@ def _row_to_transaction_dict(
     items = _fetch_transaction_items(conn, tx_id)
     total_amount = sum(it["line_total"] for it in items)
 
+    row_keys = row.keys()
+    payment_method = str(row["payment_method"]) if "payment_method" in row_keys and row["payment_method"] else "cash"
+    customer_id = int(row["customer_id"]) if "customer_id" in row_keys and row["customer_id"] is not None else None
+    customer_name = None
+    if customer_id is not None:
+        c_row = conn.execute("SELECT name FROM customers WHERE id = ?", (customer_id,)).fetchone()
+        if c_row:
+            customer_name = str(c_row["name"])
+
     data: dict[str, Any] = {
         "id": tx_id,
         "type": str(row["type"]),
         "status": str(row["status"]),
+        "payment_method": payment_method,
+        "customer_id": customer_id,
+        "customer_name": customer_name,
         "idempotency_key": str(row["idempotency_key"]) if row["idempotency_key"] else None,
         "original_instruction": str(row["original_instruction"]),
         "created_at": str(row["created_at"]),
@@ -246,13 +258,46 @@ def create_transaction_draft(payload: TransactionCreate) -> TransactionResponse:
                 line_total,
             ))
 
+        # Validate customer if credit transaction
+        if payload.payment_method == "credit":
+            if not payload.customer_id:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="A customer must be specified for credit (Udhaar) transactions.",
+                )
+
+        if payload.customer_id:
+            cust = conn.execute(
+                "SELECT * FROM customers WHERE id = ?",
+                (payload.customer_id,),
+            ).fetchone()
+            if not cust:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Customer ID {payload.customer_id} not found.",
+                )
+            if not cust["active"]:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Customer '{cust['name']}' is inactive.",
+                )
+
         # Insert draft transaction
         cursor = conn.execute(
             """
-            INSERT INTO transactions (type, status, idempotency_key, original_instruction, created_at)
-            VALUES (?, 'draft', ?, ?, datetime('now'))
+            INSERT INTO transactions (
+                type, status, idempotency_key, original_instruction,
+                payment_method, customer_id, created_at
+            )
+            VALUES (?, 'draft', ?, ?, ?, ?, datetime('now'))
             """,
-            (payload.type, payload.idempotency_key, payload.original_instruction),
+            (
+                payload.type,
+                payload.idempotency_key,
+                payload.original_instruction,
+                payload.payment_method,
+                payload.customer_id,
+            ),
         )
         tx_id = cursor.lastrowid
 
@@ -275,6 +320,8 @@ def list_transactions(
     type: Optional[str] = Query(None, description="Filter by type: sale or purchase"),
     status_filter: Optional[str] = Query(None, alias="status", description="Filter by status: draft, confirmed, reversed"),
     product_id: Optional[int] = Query(None, description="Filter transactions involving a product"),
+    payment_method: Optional[str] = Query(None, description="Filter by payment method: cash, upi, credit"),
+    customer_id: Optional[int] = Query(None, description="Filter by customer ID"),
     start_date: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
     end_date: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
     limit: int = Query(50, ge=1, le=200, description="Page size"),
@@ -283,6 +330,14 @@ def list_transactions(
     """List transactions with filtering and pagination."""
     where_clauses: list[str] = []
     params: list[Any] = []
+
+    if payment_method and payment_method.strip():
+        where_clauses.append("t.payment_method = ?")
+        params.append(payment_method.strip().lower())
+
+    if customer_id is not None:
+        where_clauses.append("t.customer_id = ?")
+        params.append(customer_id)
 
     if type and type.strip():
         where_clauses.append("t.type = ?")
@@ -512,6 +567,36 @@ def confirm_transaction(transaction_id: int) -> TransactionDetailResponse:
             (transaction_id,),
         )
 
+        # If credit sale, record audit entry in customer_ledger
+        row_keys = tx.keys()
+        pay_method = str(tx["payment_method"]) if "payment_method" in row_keys and tx["payment_method"] else "cash"
+        cust_id = int(tx["customer_id"]) if "customer_id" in row_keys and tx["customer_id"] is not None else None
+
+        if tx_type == "sale" and pay_method == "credit" and cust_id is not None:
+            tx_total = sum(int(it["line_total"]) for it in items)
+            last_ledger = conn.execute(
+                "SELECT balance_after FROM customer_ledger WHERE customer_id = ? ORDER BY id DESC LIMIT 1",
+                (cust_id,),
+            ).fetchone()
+            prev_balance = int(last_ledger["balance_after"]) if last_ledger else 0
+            new_balance = prev_balance + tx_total
+
+            conn.execute(
+                """
+                INSERT INTO customer_ledger (
+                    customer_id, transaction_id, entry_type, amount, balance_after, notes, created_at
+                )
+                VALUES (?, ?, 'credit_sale', ?, ?, ?, datetime('now'))
+                """,
+                (
+                    cust_id,
+                    transaction_id,
+                    tx_total,
+                    new_balance,
+                    f"Credit sale #{transaction_id}",
+                ),
+            )
+
         updated_tx = conn.execute(
             "SELECT * FROM transactions WHERE id = ?", (transaction_id,)
         ).fetchone()
@@ -642,6 +727,41 @@ def reverse_transaction(transaction_id: int) -> TransactionDetailResponse:
             "UPDATE transactions SET status = 'reversed' WHERE id = ?",
             (transaction_id,),
         )
+
+        # If reversed transaction was a credit sale, record compensating ledger adjustment
+        row_keys = tx.keys()
+        pay_method = str(tx["payment_method"]) if "payment_method" in row_keys and tx["payment_method"] else "cash"
+        cust_id = int(tx["customer_id"]) if "customer_id" in row_keys and tx["customer_id"] is not None else None
+
+        if tx_type == "sale" and pay_method == "credit" and cust_id is not None:
+            tx_items = conn.execute(
+                "SELECT line_total FROM transaction_items WHERE transaction_id = ?",
+                (transaction_id,),
+            ).fetchall()
+            tx_total = sum(int(it["line_total"]) for it in tx_items)
+
+            last_ledger = conn.execute(
+                "SELECT balance_after FROM customer_ledger WHERE customer_id = ? ORDER BY id DESC LIMIT 1",
+                (cust_id,),
+            ).fetchone()
+            prev_balance = int(last_ledger["balance_after"]) if last_ledger else 0
+            new_balance = prev_balance - tx_total
+
+            conn.execute(
+                """
+                INSERT INTO customer_ledger (
+                    customer_id, transaction_id, entry_type, amount, balance_after, notes, created_at
+                )
+                VALUES (?, ?, 'adjustment', ?, ?, ?, datetime('now'))
+                """,
+                (
+                    cust_id,
+                    transaction_id,
+                    tx_total,
+                    new_balance,
+                    f"Reversal of credit sale #{transaction_id}",
+                ),
+            )
 
         reversed_tx = conn.execute(
             "SELECT * FROM transactions WHERE id = ?", (transaction_id,)

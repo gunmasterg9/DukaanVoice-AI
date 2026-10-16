@@ -7,6 +7,8 @@ export const en = {
     tagline: 'Multilingual Digital Shop Register',
   },
   nav: {
+    quick_sale: 'Quick Sale',
+    udhaar_khata: 'Udhaar Khata',
     dashboard: 'Dashboard',
     products: 'Products',
     transactions: 'Transactions',

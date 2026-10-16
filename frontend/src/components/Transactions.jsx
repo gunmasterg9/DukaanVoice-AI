@@ -10,6 +10,7 @@ import {
   rupeesToPaise,
   validateTransactionDraft,
 } from '../utils/formatters'
+import { ReceiptModal } from './ReceiptModal'
 
 export function Transactions() {
   const { t } = useI18n()
@@ -868,6 +869,7 @@ function TransactionDetailModal({ transactionId, onClose, onConfirm, onReverse }
   const [detail, setDetail] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [showReceipt, setShowReceipt] = useState(false)
 
   const loadDetail = () => {
     setLoading(true)
@@ -1080,6 +1082,16 @@ function TransactionDetailModal({ transactionId, onClose, onConfirm, onReverse }
               {t('transactions.action_review')}
             </button>
           )}
+          {detail?.status === 'confirmed' && detail?.type === 'sale' && (
+            <button
+              type="button"
+              className="btn btn-primary"
+              style={{ padding: '8px 16px' }}
+              onClick={() => setShowReceipt(true)}
+            >
+              🖨️ {t('quick_sale.print_receipt')}
+            </button>
+          )}
           {detail?.status === 'confirmed' && (
             <button
               type="button"
@@ -1098,6 +1110,12 @@ function TransactionDetailModal({ transactionId, onClose, onConfirm, onReverse }
           </button>
         </div>
       </div>
+      {showReceipt && detail && (
+        <ReceiptModal
+          transaction={detail}
+          onClose={() => setShowReceipt(false)}
+        />
+      )}
     </div>
   )
 }

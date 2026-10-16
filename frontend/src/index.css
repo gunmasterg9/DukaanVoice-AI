@@ -1884,4 +1884,590 @@ a:hover {
   border-radius: var(--radius-sm) 0 0 var(--radius-sm);
 }
 
+/* ==========================================================================
+   Quick Sale POS & Retail Kirana Billing Styles
+   ========================================================================== */
+.quick-sale-view {
+  animation: fadeIn 0.25s ease-out;
+}
+
+.quick-sale-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-md);
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+
+.quick-sale-sub {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin-top: 2px;
+}
+
+.quick-sale-actions {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.quick-sale-layout {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: var(--space-lg);
+  align-items: start;
+}
+
+@media (max-width: 960px) {
+  .quick-sale-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.pos-search-wrapper {
+  position: relative;
+  margin-bottom: var(--space-md);
+}
+
+.pos-search-input {
+  width: 100%;
+  padding: 12px 18px;
+  font-size: 1.05rem;
+  border-radius: var(--radius-lg);
+  border: 2px solid var(--border-color);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: all var(--transition-fast);
+}
+
+.pos-search-input:focus {
+  border-color: var(--color-primary);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+}
+
+.pos-search-spinner {
+  position: absolute;
+  right: 14px;
+  top: 14px;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border-color);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+.pos-search-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  max-height: 320px;
+  overflow-y: auto;
+  z-index: 100;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.pos-dropdown-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border-color);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.pos-dropdown-item:last-child {
+  border-bottom: none;
+}
+
+.pos-dropdown-item:hover {
+  background: var(--bg-card-hover);
+}
+
+.pos-item-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.pos-item-stock {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.pos-item-price {
+  font-weight: 700;
+  color: var(--color-primary-light);
+}
+
+.pos-cart-container {
+  padding: var(--space-md);
+}
+
+.pos-cart-header {
+  margin-bottom: var(--space-sm);
+}
+
+.pos-cart-empty {
+  padding: var(--space-xl);
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.pos-table th {
+  background: var(--bg-dark);
+}
+
+.pos-item-sub {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.pos-qty-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pos-qty-input {
+  width: 80px;
+  padding: 6px 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.pos-unit-label {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.pos-shortcut-chips {
+  display: flex;
+  gap: 4px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+
+.chip-btn {
+  background: var(--bg-dark);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.chip-btn:hover {
+  background: var(--color-primary);
+  color: #fff;
+  border-color: var(--color-primary);
+}
+
+.pos-price-input {
+  width: 90px;
+  padding: 6px 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.pos-line-total {
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.pos-summary-card {
+  padding: var(--space-lg);
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  position: sticky;
+  top: 80px;
+}
+
+.pos-total-display {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: var(--space-md) 0;
+  border-bottom: 2px dashed var(--border-color);
+  margin-bottom: var(--space-md);
+}
+
+.pos-total-label {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.pos-total-amount {
+  font-size: 1.85rem;
+  font-weight: 800;
+  color: var(--color-emerald-primary, #10b981);
+}
+
+.pos-payment-section {
+  margin-bottom: var(--space-lg);
+}
+
+.pos-payment-options {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.payment-option-btn {
+  background: var(--bg-dark);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  padding: 10px 6px;
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  transition: all var(--transition-fast);
+}
+
+.payment-option-btn:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--color-primary-light);
+}
+
+.payment-option-btn.active {
+  background: var(--color-primary);
+  color: #fff;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 10px rgba(37, 99, 235, 0.4);
+}
+
+.pos-upi-alert {
+  margin-top: 10px;
+  font-size: 0.8rem;
+  padding: 8px 12px;
+}
+
+.pos-customer-select-wrapper {
+  margin-top: 12px;
+}
+
+.pos-confirm-btn {
+  width: 100%;
+  padding: 14px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  border-radius: var(--radius-md);
+}
+
+.pos-review-summary {
+  background: var(--bg-dark);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  margin-top: var(--space-md);
+}
+
+.review-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  font-size: 0.95rem;
+}
+
+/* ==========================================================================
+   Udhaar Khata (Customer Credit Ledger) Styles
+   ========================================================================== */
+.udhaar-view {
+  animation: fadeIn 0.25s ease-out;
+}
+
+.udhaar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-md);
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+
+.udhaar-sub {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.udhaar-stat-val {
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin: 4px 0 6px 0;
+}
+
+.khata-balance-tag {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.balance-due {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.balance-advance {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.balance-settled {
+  background: rgba(148, 163, 184, 0.15);
+  color: #94a3b8;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+}
+
+.table-action-group {
+  display: flex;
+  gap: 6px;
+}
+
+.payment-customer-meta {
+  background: var(--bg-dark);
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-md);
+}
+
+.payment-current-bal {
+  margin-top: 4px;
+  font-size: 0.9rem;
+}
+
+.ledger-summary-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--bg-dark);
+  padding: 12px 18px;
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-md);
+}
+
+.ledger-total-bal {
+  font-size: 1.3rem;
+  color: #ef4444;
+}
+
+/* ==========================================================================
+   Printable Receipt Slip Styles
+   ========================================================================== */
+.receipt-modal-overlay {
+  z-index: 1000;
+}
+
+.receipt-modal-card {
+  max-width: 440px;
+  width: 100%;
+  background: #ffffff;
+  color: #111827;
+  border-radius: var(--radius-lg);
+  padding: var(--space-md);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+}
+
+.receipt-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-bottom: var(--space-sm);
+  padding-bottom: var(--space-xs);
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.printable-receipt {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  color: #111827;
+  padding: 12px;
+}
+
+.receipt-header {
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.receipt-shop-logo {
+  font-size: 2rem;
+  margin-bottom: 4px;
+}
+
+.receipt-shop-name {
+  font-size: 1.3rem;
+  font-weight: 800;
+  margin: 0;
+  color: #111827;
+}
+
+.receipt-memo-tag {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #6b7280;
+  margin-top: 2px;
+}
+
+.receipt-divider {
+  border-top: 1px dashed #9ca3af;
+  margin: 10px 0;
+}
+
+.receipt-meta-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 12px;
+  font-size: 0.82rem;
+}
+
+.receipt-meta-span {
+  grid-column: span 2;
+}
+
+.receipt-meta-label {
+  color: #6b7280;
+  margin-right: 4px;
+}
+
+.receipt-meta-value {
+  color: #111827;
+  font-weight: 500;
+}
+
+.receipt-items-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+  margin: 6px 0;
+}
+
+.receipt-items-table th {
+  text-align: left;
+  border-bottom: 1px solid #d1d5db;
+  padding: 6px 4px;
+  color: #374151;
+  font-weight: 600;
+}
+
+.receipt-items-table td {
+  padding: 6px 4px;
+  border-bottom: 1px solid #f3f4f6;
+  color: #111827;
+}
+
+.th-qty, .td-qty {
+  text-align: center;
+}
+
+.th-rate, .td-rate {
+  text-align: right;
+}
+
+.th-amount, .td-amount {
+  text-align: right;
+  font-weight: 600;
+}
+
+.receipt-totals {
+  font-size: 0.88rem;
+}
+
+.receipt-total-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+}
+
+.grand-total {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #111827;
+}
+
+.receipt-upi-disclaimer {
+  font-size: 0.75rem;
+  color: #b45309;
+  background: #fef3c7;
+  padding: 4px 8px;
+  border-radius: 4px;
+  margin: 4px 0;
+}
+
+.paid-row {
+  font-weight: 700;
+  color: #047857;
+}
+
+.credit-row {
+  font-weight: 700;
+  color: #b91c1c;
+}
+
+.total-khata-row {
+  font-weight: 600;
+  color: #4b5563;
+  font-size: 0.82rem;
+}
+
+.receipt-footer {
+  text-align: center;
+  margin-top: 14px;
+  border-top: 1px dashed #9ca3af;
+  padding-top: 10px;
+}
+
+.receipt-thank-you {
+  font-weight: 600;
+  font-size: 0.85rem;
+  margin: 0;
+  color: #374151;
+}
+
+.receipt-app-brand {
+  font-size: 0.72rem;
+  color: #9ca3af;
+  margin-top: 4px;
+}
+
+/* Print Media Query */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .printable-receipt,
+  .printable-receipt * {
+    visibility: visible;
+  }
+  .printable-receipt {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 80mm;
+    padding: 0;
+    margin: 0;
+  }
+  .no-print {
+    display: none !important;
+  }
+}
+
+
 

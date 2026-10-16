@@ -11,6 +11,7 @@ from app.config import Settings, get_settings
 from app.schema import (
     MIGRATION_001_STATEMENTS,
     MIGRATION_002_STATEMENTS,
+    MIGRATION_003_STATEMENTS,
     REQUIRED_TABLES,
     SCHEMA_VERSION,
     SchemaError,
@@ -119,6 +120,17 @@ def initialize_schema(database_path: str | Path | None = None) -> dict[str, obje
             if fk_errors:
                 raise SchemaError(f"Foreign key violations detected during migration: {fk_errors}")
             version = 2
+
+        if int(version) == 2:
+            conn.commit()
+            for statement in MIGRATION_003_STATEMENTS:
+                conn.execute(statement)
+            conn.execute(
+                "INSERT INTO schema_migrations (version, name) VALUES (?, ?)",
+                (3, "003_customers_and_ledger"),
+            )
+            conn.commit()
+            version = 3
 
         if int(version) < SCHEMA_VERSION:
             raise SchemaError(
