@@ -17,6 +17,7 @@ from app.routers import (
     products,
     reports,
     transactions,
+    tts,
 )
 
 
@@ -50,6 +51,7 @@ def create_app() -> FastAPI:
     application.include_router(customers.router)
     application.include_router(expenses.router)
     application.include_router(cash_closing.router)
+    application.include_router(tts.router)
 
     # Mount Streamable HTTP MCP server (Model Context Protocol 2025-11-25)
     application.mount("/mcp", mcp_app)

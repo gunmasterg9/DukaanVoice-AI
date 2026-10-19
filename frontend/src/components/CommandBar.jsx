@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useI18n } from '../i18n/I18nContext'
 import { interpretCommand } from '../services/commandParser'
+import { voiceService } from '../services/voiceService'
 
 // Maps language code to standard BCP-47 speech recognition locale tag
 const LOCALE_TO_SPEECH_TAG = {
@@ -77,6 +78,7 @@ export function CommandBar({ onNavigate }) {
       recognitionRef.current?.stop()
       setIsListening(false)
     } else {
+      voiceService.cancel()
       try {
         if (recognitionRef.current) {
           recognitionRef.current.lang = LOCALE_TO_SPEECH_TAG[locale] || 'en-IN'
@@ -90,12 +92,7 @@ export function CommandBar({ onNavigate }) {
   }
 
   const speakText = (text) => {
-    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-      window.speechSynthesis.cancel()
-      const utterance = new SpeechSynthesisUtterance(text)
-      utterance.lang = LOCALE_TO_SPEECH_TAG[locale] || 'en-IN'
-      window.speechSynthesis.speak(utterance)
-    }
+    voiceService.speak(text, locale)
   }
 
   const handleExecute = async (inputQuery) => {

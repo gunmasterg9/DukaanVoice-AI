@@ -11,8 +11,8 @@
  */
 
 const BASE_URL = typeof window !== 'undefined' ? '' : 'http://127.0.0.1:8000'
-const MCP_ENDPOINT = `${BASE_URL}/api/mcp`
-const MCP_FALLBACK_ENDPOINT = `${BASE_URL}/mcp`
+const MCP_ENDPOINT = `${BASE_URL}/api/mcp/`
+const MCP_FALLBACK_ENDPOINT = `${BASE_URL}/mcp/`
 
 const WORD_TO_NUM = {
   // English words
@@ -217,7 +217,13 @@ class McpClient {
       }
     }
 
-    const lower = text.toLowerCase()
+    // Strip leading assistant / wake-word prefix if present (e.g. "Alexa, ", "Hey Alexa, ", "DukaanVoice, ", "દુકાનવોઇસ, ", "दुकानवॉइस, ")
+    const stripped = text
+      .replace(/^(?:hey\s+|ok\s+|hi\s+|namaste\s+)?(?:alexa|dukaanvoice|dukaan\s+voice|દુકાનવોઇસ|દુકાન\s+વોઇસ|दुकानवॉइस|दुकान\s+वॉइस)[,\s:]+/i, '')
+      .trim()
+    const queryText = stripped.length > 0 ? stripped : text
+
+    const lower = queryText.toLowerCase()
     const cleanLower = lower.replace(/[.,/#!$%^&*;:{}=\-_`~()?]/g, ' ').replace(/\s+/g, ' ').trim()
 
     // 1. Explicit Confirmation & Cancellation intents
@@ -271,7 +277,7 @@ class McpClient {
     const isPurchase = purchaseKws.some((kw) => lower.includes(kw.toLowerCase()))
 
     // Extract quantity (supports Latin numbers, Indic numerals, and number words)
-    const quantity = parseQuantity(text)
+    const quantity = parseQuantity(queryText)
 
     // Extract unit
     const unitMatch = lower.match(/(packet|packets|piece|pieces|kg|kilo|gram|litre|litres|bag|bags|box|boxes|jar|jars|પેકેટ|નંગ|કિલો|લિટર|દાગીના|બોક્સ|ડબ્બા|ડબ્બો|पैकेट|नग|किलो|लीटर|डिब्बे|डिब्बा|बॉक्स)/)
@@ -305,7 +311,7 @@ class McpClient {
       }
 
       // Isolate candidate product name by stripping action keywords, numbers, and units
-      let candidate = text
+      let candidate = queryText
       // Remove numbers (both Latin and Indic digits)
       candidate = candidate.replace(/[\u0AE6-\u0AEF\u0966-\u096F\d]+(?:\.\d+)?/g, ' ')
 
@@ -375,7 +381,7 @@ class McpClient {
       'स्टॉक', 'माल', 'खोजो', 'कितना', 'कितने', 'बचे', 'बचे हैं', 'है क्या'
     ]
 
-    let searchQuery = text
+    let searchQuery = queryText
     const searchStrip = [
       ...stockKws,
       'how many', 'how much', 'packets of', 'packet of', 'packets', 'packet', 'pieces', 'piece', 'boxes', 'box',

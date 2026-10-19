@@ -473,4 +473,23 @@ describe('Phase 3: Alexa+ Conversational Simulator & MCP Tool Integration', () =
     assert.equal(currentState, 'completed')
   })
 
+  it('19. Strips assistant prefixes (Alexa, DukaanVoice, દુકાનવોઇસ, दुकानवॉइस) from conversational voice input', async () => {
+    // A: Confirmation with "Alexa, confirm"
+    const confirmRes = await mcpClient.processShopkeeperQuery('Alexa, confirm')
+    assert.equal(confirmRes.type, 'confirmation')
+
+    // B: Cancellation with "Hey Alexa, cancel"
+    const cancelRes = await mcpClient.processShopkeeperQuery('Hey Alexa, cancel')
+    assert.equal(cancelRes.type, 'cancellation')
+
+    // C: Gujarati confirmation with "દુકાનવોઇસ, કન્ફર્મ"
+    const guConfirmRes = await mcpClient.processShopkeeperQuery('દુકાનવોઇસ, કન્ફર્મ')
+    assert.equal(guConfirmRes.type, 'confirmation')
+
+    // D: Hindi confirmation with "दुकानवॉइस, हाँ"
+    const hiConfirmRes = await mcpClient.processShopkeeperQuery('दुकानवॉइस, हाँ')
+    assert.equal(hiConfirmRes.type, 'confirmation')
+  })
+
 })
+

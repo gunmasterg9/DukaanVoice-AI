@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { mcpClient } from '../services/mcpClient'
+import { voiceService } from '../services/voiceService'
 import { useI18n } from '../i18n/I18nContext'
 
 let msgCounter = 0
@@ -22,6 +23,16 @@ export function AlexaPlusSimulator() {
   const [mcpStatus, setMcpStatus] = useState({ connected: false, sessionId: null, tools: [] })
   const [activeProposal, setActiveProposal] = useState(null)
   const [isListening, setIsListening] = useState(false)
+  const [voiceState, setVoiceState] = useState(() => ({
+    isSpeaking: voiceService.isSpeaking,
+    muted: voiceService.muted,
+    rate: voiceService.rate,
+    provider: voiceService.getActiveProviderLabel(locale),
+    pollyAvailable: voiceService.pollyStatus.available,
+    availableVoices: voiceService.getAvailableBrowserVoices(locale),
+    selectedVoiceURI: voiceService.selectedVoiceURI,
+    previewState: voiceService.previewState,
+  }))
   const recognitionRef = useRef(null)
   const messagesEndRef = useRef(null)
   const inputRef = useRef(null)
@@ -37,6 +48,27 @@ export function AlexaPlusSimulator() {
   useEffect(() => {
     scrollToBottom()
   }, [messages, activeProposal, conversationState])
+
+  // Synchronize with VoiceService (Polly / Browser Natural TTS)
+  useEffect(() => {
+    voiceService.checkBackendPollyStatus()
+    const unsub = voiceService.subscribe((vs) => {
+      setVoiceState({
+        isSpeaking: vs.isSpeaking,
+        muted: vs.muted,
+        rate: vs.rate,
+        provider: vs.getActiveProviderLabel(locale),
+        pollyAvailable: vs.pollyStatus.available,
+        availableVoices: vs.getAvailableBrowserVoices(locale),
+        selectedVoiceURI: vs.selectedVoiceURI,
+        previewState: vs.previewState,
+      })
+    })
+    return () => {
+      unsub()
+      voiceService.cancel()
+    }
+  }, [locale])
 
   // Initialize MCP Connection on mount
   useEffect(() => {
@@ -77,23 +109,47 @@ export function AlexaPlusSimulator() {
     if (SpeechRecognition) {
       const recognition = new SpeechRecognition()
       recognition.continuous = false
-      recognition.interimResults = false
+      recognition.interimResults = true
       recognition.lang = locale === 'gu' ? 'gu-IN' : locale === 'hi' ? 'hi-IN' : 'en-IN'
 
       recognition.onresult = (event) => {
-        const transcript = event.results[0][0].transcript
-        setInput(transcript)
-        setIsListening(false)
-        handleSendRef.current?.(transcript)
+        let interim = ''
+        let final = ''
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          const item = event.results[i]
+          if (item.isFinal) {
+            final += item[0].transcript
+          } else {
+            interim += item[0].transcript
+          }
+        }
+        if (interim) {
+          setInput(interim)
+        }
+        if (final) {
+          const cleanFinal = final.trim()
+          setInput(cleanFinal)
+          setIsListening(false)
+          handleSendRef.current?.(cleanFinal)
+        }
       }
 
-      recognition.onerror = () => setIsListening(false)
+      recognition.onerror = (e) => {
+        setIsListening(false)
+        if (e.error === 'not-allowed') {
+          setMessages((prev) => [
+            ...prev,
+            createMsg('assistant', '⚠️ Microphone access was denied. Please allow microphone permissions in your browser to speak commands.', { isError: true }),
+          ])
+        }
+      }
       recognition.onend = () => setIsListening(false)
       recognitionRef.current = recognition
     }
   }, [locale])
 
   const toggleMic = () => {
+    voiceService.cancel()
     if (!voiceSupported) {
       alert('Speech recognition is not supported in this browser environment. Please use typed input.')
       return
@@ -113,16 +169,12 @@ export function AlexaPlusSimulator() {
   }
 
   const speak = (text) => {
-    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-      window.speechSynthesis.cancel()
-      const utterance = new SpeechSynthesisUtterance(text)
-      utterance.lang = locale === 'gu' ? 'gu-IN' : locale === 'hi' ? 'hi-IN' : 'en-IN'
-      window.speechSynthesis.speak(utterance)
-    }
+    voiceService.speak(text, locale)
   }
 
   const handleConfirmProposal = async () => {
     if (!activeProposal || isProcessing) return
+    voiceService.cancel()
     setConversationState('processing')
 
     try {
@@ -164,6 +216,7 @@ export function AlexaPlusSimulator() {
 
   const handleCancelProposal = () => {
     if (!activeProposal || isProcessing) return
+    voiceService.cancel()
     const cancelledName = activeProposal.productName
     const draftId = activeProposal.draftId
     const cancelMsg = `Proposed action for ${cancelledName} (Draft #${draftId}) was cancelled. No changes were made to store stock.`
@@ -181,6 +234,7 @@ export function AlexaPlusSimulator() {
 
   const handleSend = async (customText) => {
     if (isProcessing) return
+    voiceService.cancel()
     const query = (customText !== undefined ? customText : input).trim()
     if (!query) return
 
@@ -266,9 +320,10 @@ export function AlexaPlusSimulator() {
           reply = `No products found matching "${res.searchQuery || query}". Please check the product catalog.`
         } else if (inv.products.length === 1) {
           const p = inv.products[0]
-          reply = `I found ${p.name}. Current stock is ${p.stock_quantity} ${p.base_unit} at ${p.selling_price_rupees} per ${p.base_unit}.${p.is_low_stock ? ' (⚠️ Low Stock Alert)' : ''}`
+          const cleanName = p.name.replace(/\b\d{8,}\b/g, '').trim()
+          reply = `I found ${cleanName}. Current stock is ${p.stock_quantity} ${p.base_unit} at ${p.selling_price_rupees} per ${p.base_unit}.${p.is_low_stock ? ' (⚠️ Low Stock Alert)' : ''}`
         } else {
-          const listStr = inv.products.slice(0, 3).map((p) => `${p.name}: ${p.stock_quantity} ${p.base_unit}`).join(', ')
+          const listStr = inv.products.slice(0, 3).map((p) => `${p.name.replace(/\b\d{8,}\b/g, '').trim()}: ${p.stock_quantity} ${p.base_unit}`).join(', ')
           reply = `Found ${inv.products.length} matching products (${listStr}). Please specify the exact product.`
         }
 
@@ -406,6 +461,100 @@ export function AlexaPlusSimulator() {
         </div>
         <div className="alexa-plus-disclaimer">
           <strong>Prototype Simulation:</strong> This interface demonstrates hands-free Kirana store management via official Model Context Protocol (MCP) Streamable HTTP tools. It is an independent simulation for the Amazon Developer Hackathon 2026 and does not require or claim official Amazon hardware endorsement.
+        </div>
+
+        {/* Voice Delivery Controls & Status */}
+        <div className="alexa-plus-voice-bar" aria-label="Voice Controls">
+          <div className="alexa-plus-voice-info">
+            <span
+              className={`badge ${voiceState.pollyAvailable ? 'badge-success' : 'badge-info'}`}
+              data-testid="voice-provider-badge"
+              title={voiceState.pollyAvailable ? 'Amazon Polly Neural Active' : 'Browser SpeechSynthesis Fallback'}
+            >
+              🎙️ {voiceState.provider}
+            </span>
+
+            {!voiceState.pollyAvailable && voiceState.availableVoices && voiceState.availableVoices.length > 0 && (
+              <select
+                className="alexa-plus-voice-select"
+                value={voiceState.selectedVoiceURI || ''}
+                onChange={(e) => voiceService.setSelectedVoiceURI(e.target.value)}
+                data-testid="voice-select-dropdown"
+                title="Select installed assistant voice"
+                aria-label="Select voice"
+              >
+                <option value="">Auto (Best Ranked Natural Voice)</option>
+                {voiceState.availableVoices.map((v) => (
+                  <option key={v.voiceURI} value={v.voiceURI}>
+                    {v.name.replace(/Microsoft |Google /g, '').slice(0, 26)} ({v.lang})
+                  </option>
+                ))}
+              </select>
+            )}
+
+            {voiceState.isSpeaking && (
+              <span className="badge badge-warning pulse" data-testid="voice-speaking-indicator">
+                🔊 Speaking...
+              </span>
+            )}
+          </div>
+
+          <div className="alexa-plus-voice-actions">
+            <div className="alexa-plus-voice-speed" aria-label="Speech Rate">
+              <span>Speed:</span>
+              {[0.9, 1.05, 1.2].map((r) => (
+                <button
+                  key={r}
+                  type="button"
+                  className={`alexa-plus-speed-btn ${voiceState.rate === r ? 'active' : ''}`}
+                  onClick={() => voiceService.setRate(r)}
+                  data-testid={`voice-speed-${r}`}
+                  title={r === 1.05 ? 'Amazon Alexa Default Pace (1.05x)' : `${r}x pace`}
+                >
+                  {r === 1.05 ? '1.05x (Alexa)' : `${r}x`}
+                </button>
+              ))}
+            </div>
+
+            <button
+              type="button"
+              className={`btn btn-sm ${voiceState.previewState === 'loading' ? 'btn-secondary' : voiceState.previewState === 'error' ? 'btn-danger' : 'btn-outline'}`}
+              onClick={() => voiceService.preview(locale)}
+              disabled={voiceState.previewState === 'loading'}
+              data-testid="voice-preview-btn"
+              title="Audition voice delivery"
+            >
+              {voiceState.previewState === 'loading'
+                ? '⏳ Loading...'
+                : voiceState.previewState === 'playing'
+                ? '🔊 Playing...'
+                : voiceState.previewState === 'error'
+                ? '⚠️ Retry'
+                : '▶ Audition Voice'}
+            </button>
+
+            {voiceState.isSpeaking && (
+              <button
+                type="button"
+                className="btn btn-sm btn-outline-danger"
+                onClick={() => voiceService.cancel()}
+                data-testid="voice-stop-btn"
+                title="Stop current speech"
+              >
+                ⏹️ Stop
+              </button>
+            )}
+
+            <button
+              type="button"
+              className={`btn btn-sm ${voiceState.muted ? 'btn-danger' : 'btn-outline'}`}
+              onClick={() => voiceService.setMuted(!voiceState.muted)}
+              data-testid="voice-mute-btn"
+              title={voiceState.muted ? 'Unmute voice feedback' : 'Mute voice feedback'}
+            >
+              {voiceState.muted ? '🔇 Muted' : '🔊 Voice On'}
+            </button>
+          </div>
         </div>
       </section>
 

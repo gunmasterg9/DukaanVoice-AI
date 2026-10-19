@@ -24,6 +24,22 @@ from app.routers.transactions import (
 from app.schemas.transaction import TransactionCreate, TransactionItemCreate
 
 
+VERNACULAR_ALIASES: dict[str, list[str]] = {
+    "biscuit": ["parle", "biscuit", "marie", "cookie"],
+    "biscuits": ["parle", "biscuit", "marie", "cookie"],
+    "बिस्कुट": ["parle", "biscuit", "marie", "cookie"],
+    "બિસ્કિટ": ["parle", "biscuit", "marie", "cookie"],
+    "soap": ["soap", "lifebuoy", "lux"],
+    "soaps": ["soap", "lifebuoy", "lux"],
+    "साबुन": ["soap", "lifebuoy", "lux"],
+    "સાબુ": ["soap", "lifebuoy", "lux"],
+    "tea": ["tea", "chai", "ચા", "चाय"],
+    "chai": ["tea", "chai", "ચા", "चाय"],
+    "चाय": ["tea", "chai", "ચા", "चाय"],
+    "ચા": ["tea", "chai", "ચા", "चाय"],
+}
+
+
 def resolve_product(
     conn, product_name_or_sku: str
 ) -> dict[str, Any]:
@@ -57,12 +73,23 @@ def resolve_product(
     if row:
         return dict(row)
 
-    # 4. Check substring match
+    # 4. Check substring match against name, sku, or category
     term = f"%{clean.lower()}%"
     rows = conn.execute(
-        "SELECT * FROM products WHERE LOWER(name) LIKE ? OR (sku IS NOT NULL AND LOWER(sku) LIKE ?)",
-        (term, term),
+        "SELECT * FROM products WHERE LOWER(name) LIKE ? OR (sku IS NOT NULL AND LOWER(sku) LIKE ?) OR (category IS NOT NULL AND LOWER(category) LIKE ?)",
+        (term, term, term),
     ).fetchall()
+
+    # 5. Check vernacular synonyms if no rows matched directly
+    if not rows and clean.lower() in VERNACULAR_ALIASES:
+        for alias in VERNACULAR_ALIASES[clean.lower()]:
+            a_term = f"%{alias}%"
+            rows = conn.execute(
+                "SELECT * FROM products WHERE LOWER(name) LIKE ? OR (sku IS NOT NULL AND LOWER(sku) LIKE ?) OR (category IS NOT NULL AND LOWER(category) LIKE ?)",
+                (a_term, a_term, a_term),
+            ).fetchall()
+            if rows:
+                break
 
     if len(rows) == 1:
         return dict(rows[0])
@@ -70,6 +97,12 @@ def resolve_product(
         # If all matches have identical name, pick the first
         distinct_names = {r["name"] for r in rows}
         if len(distinct_names) == 1:
+            return dict(rows[0])
+
+        # If all matches share a common prefix (e.g. repeated test creations of Parle-G Gold...), pick the first
+        import os
+        common_pfx = os.path.commonprefix([r["name"] for r in rows]).strip()
+        if len(common_pfx) >= 5:
             return dict(rows[0])
 
         # If one match starts with the search term, pick it
@@ -101,9 +134,18 @@ def get_inventory_tool(
     params: list[Any] = []
 
     if query and query.strip():
-        term = f"%{query.strip().lower()}%"
-        where_clauses.append("(LOWER(name) LIKE ? OR (sku IS NOT NULL AND LOWER(sku) LIKE ?))")
-        params.extend([term, term])
+        q_clean = query.strip().lower()
+        if q_clean in VERNACULAR_ALIASES:
+            syn_clauses = []
+            for alias in VERNACULAR_ALIASES[q_clean]:
+                syn_term = f"%{alias}%"
+                syn_clauses.append("(LOWER(name) LIKE ? OR (sku IS NOT NULL AND LOWER(sku) LIKE ?) OR (category IS NOT NULL AND LOWER(category) LIKE ?))")
+                params.extend([syn_term, syn_term, syn_term])
+            where_clauses.append(f"({' OR '.join(syn_clauses)})")
+        else:
+            term = f"%{q_clean}%"
+            where_clauses.append("(LOWER(name) LIKE ? OR (sku IS NOT NULL AND LOWER(sku) LIKE ?) OR (category IS NOT NULL AND LOWER(category) LIKE ?))")
+            params.extend([term, term, term])
 
     if low_stock_only:
         where_clauses.append("stock_qty <= low_stock_threshold")
