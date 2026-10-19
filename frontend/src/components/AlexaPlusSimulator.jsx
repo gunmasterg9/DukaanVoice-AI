@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { mcpClient } from '../services/mcpClient'
 import { voiceService } from '../services/voiceService'
 import { useI18n } from '../i18n/I18nContext'
@@ -70,36 +70,64 @@ export function AlexaPlusSimulator() {
     }
   }, [locale])
 
-  // Initialize MCP Connection on mount
-  useEffect(() => {
-    let mounted = true
-    async function connectMcp() {
-      try {
-        const initRes = await mcpClient.initialize()
-        if (mounted && initRes.success) {
-          setMcpStatus({
-            connected: true,
-            sessionId: initRes.sessionId,
-            tools: mcpClient.tools || [],
-          })
-          setMessages([
-            createMsg(
-              'assistant',
-              'Namaste! I am DukaanVoice for Alexa+ (Simulated Experience). You can ask questions in English, Gujarati (ગુજરાતી), or Hindi (हिन्दी) to check stock, propose sales, receive incoming purchases, or view daily reports.'
-            ),
-          ])
-        } else if (mounted) {
-          setMcpStatus({ connected: false, error: initRes.error || 'Failed to initialize MCP', tools: [] })
-        }
-      } catch (err) {
-        if (mounted) {
-          setMcpStatus({ connected: false, error: err.message, tools: [] })
-        }
+  // Initialize MCP Connection with reconnection capability
+  const connectMcp = useCallback(async () => {
+    try {
+      const initRes = await mcpClient.initialize()
+      if (initRes.success) {
+        setMcpStatus({
+          connected: true,
+          sessionId: initRes.sessionId,
+          tools: mcpClient.tools || [],
+        })
+        setMessages((prev) =>
+          prev.length === 0
+            ? [
+                createMsg(
+                  'assistant',
+                  'Namaste! I am DukaanVoice for Alexa+ (Simulated Experience). You can ask questions in English, Gujarati (ગુજરાતી), or Hindi (हिन्दी) to check stock, propose sales, receive incoming purchases, or view daily reports.'
+                ),
+              ]
+            : prev
+        )
+      } else {
+        setMcpStatus({ connected: false, error: initRes.error || 'Failed to initialize MCP', tools: [] })
       }
+    } catch (err) {
+      setMcpStatus({ connected: false, error: err.message, tools: [] })
     }
-    connectMcp()
+  }, [])
+
+  useEffect(() => {
+    let ignore = false
+    mcpClient.initialize().then((initRes) => {
+      if (ignore) return
+      if (initRes.success) {
+        setMcpStatus({
+          connected: true,
+          sessionId: initRes.sessionId,
+          tools: mcpClient.tools || [],
+        })
+        setMessages((prev) =>
+          prev.length === 0
+            ? [
+                createMsg(
+                  'assistant',
+                  'Namaste! I am DukaanVoice for Alexa+ (Simulated Experience). You can ask questions in English, Gujarati (ગુજરાતી), or Hindi (हिन्दी) to check stock, propose sales, receive incoming purchases, or view daily reports.'
+                ),
+              ]
+            : prev
+        )
+      } else {
+        setMcpStatus({ connected: false, error: initRes.error || 'Failed to initialize MCP', tools: [] })
+      }
+    }).catch((err) => {
+      if (!ignore) {
+        setMcpStatus({ connected: false, error: err.message, tools: [] })
+      }
+    })
     return () => {
-      mounted = false
+      ignore = true
     }
   }, [])
 
@@ -197,6 +225,10 @@ export function AlexaPlusSimulator() {
 
       const successMsg = confirmRes.message || `Action confirmed! Updated stock is now ${confirmRes.current_stock ?? confirmRes.stock_after}.`
 
+      if (mcpClient.sessionId && mcpClient.sessionId !== mcpStatus.sessionId) {
+        setMcpStatus((prev) => ({ ...prev, connected: true, sessionId: mcpClient.sessionId, error: null }))
+      }
+
       setMessages((prev) => [
         ...prev,
         createMsg('user', `Confirm action (Draft #${activeProposal.draftId})`),
@@ -244,6 +276,10 @@ export function AlexaPlusSimulator() {
 
     try {
       const res = await mcpClient.processShopkeeperQuery(query, locale)
+
+      if (mcpClient.sessionId && mcpClient.sessionId !== mcpStatus.sessionId) {
+        setMcpStatus((prev) => ({ ...prev, connected: true, sessionId: mcpClient.sessionId, error: null }))
+      }
 
       // 1. User confirmed via voice or text
       if (res.type === 'confirmation') {
@@ -456,6 +492,17 @@ export function AlexaPlusSimulator() {
               <span className="badge badge-info" style={{ fontFamily: 'monospace', fontSize: '0.72rem' }} title={`Session: ${mcpStatus.sessionId}`}>
                 Session: {mcpStatus.sessionId.slice(0, 8)}...
               </span>
+            )}
+            {!mcpStatus.connected && (
+              <button
+                type="button"
+                className="btn btn-sm btn-outline-warning"
+                style={{ padding: '2px 8px', fontSize: '0.72rem' }}
+                onClick={connectMcp}
+                title="Reconnect to MCP Server"
+              >
+                🔄 Reconnect
+              </button>
             )}
           </div>
         </div>

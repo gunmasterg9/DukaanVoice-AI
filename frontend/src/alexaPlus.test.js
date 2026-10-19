@@ -491,5 +491,96 @@ describe('Phase 3: Alexa+ Conversational Simulator & MCP Tool Integration', () =
     assert.equal(hiConfirmRes.type, 'confirmation')
   })
 
+  it('20. Transparently recovers and re-initializes on HTTP 404 Session not found errors', async () => {
+    const originalFetch = globalThis.fetch
+    let callCount = 0
+    mcpClient.sessionId = 'stale-session-123'
+    mcpClient.initialized = true
+
+    globalThis.fetch = async (url, opts) => {
+      callCount++
+      const body = JSON.parse(opts.body)
+
+      // First call (with stale session): simulate backend 404 Session not found
+      if (callCount === 1) {
+        return {
+          ok: false,
+          status: 404,
+          statusText: 'Not Found',
+          text: async () => JSON.stringify({ jsonrpc: '2.0', id: null, error: { code: -32600, message: 'Session not found' } }),
+          headers: new Headers(),
+        }
+      }
+
+      // Second call: initialize handshake
+      if (body.method === 'initialize') {
+        const headers = new Headers()
+        headers.set('mcp-session-id', 'new-valid-session-456')
+        return {
+          ok: true,
+          status: 200,
+          headers,
+          json: async () => ({
+            jsonrpc: '2.0',
+            id: body.id,
+            result: {
+              protocolVersion: '2025-11-25',
+              serverInfo: { name: 'dukaanvoice-alexa-plus', version: '1.0.0' },
+            },
+          }),
+        }
+      }
+
+      // Third call: tools/list from initialize
+      if (body.method === 'tools/list') {
+        return {
+          ok: true,
+          status: 200,
+          headers: new Headers(),
+          json: async () => ({
+            jsonrpc: '2.0',
+            id: body.id,
+            result: { tools: [] },
+          }),
+        }
+      }
+
+      // Fourth call: retried original tool call with new session
+      if (body.method === 'tools/call') {
+        return {
+          ok: true,
+          status: 200,
+          headers: new Headers(),
+          json: async () => ({
+            jsonrpc: '2.0',
+            id: body.id,
+            result: {
+              content: [{ text: JSON.stringify({ status: 'ok', recovered: true }) }],
+            },
+          }),
+        }
+      }
+
+      return {
+        ok: true,
+        status: 200,
+        headers: new Headers(),
+        json: async () => ({ jsonrpc: '2.0', id: body.id, result: {} }),
+      }
+    }
+
+    try {
+      const toolRes = await mcpClient.callTool('get_inventory', { query: 'tea' })
+      assert.equal(toolRes.status, 'ok')
+      assert.equal(toolRes.recovered, true)
+      assert.equal(mcpClient.sessionId, 'new-valid-session-456')
+    } finally {
+      globalThis.fetch = originalFetch
+      mcpClient.sessionId = null
+      mcpClient.initialized = false
+    }
+  })
+
 })
+
 

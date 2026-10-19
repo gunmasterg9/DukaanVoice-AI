@@ -66,9 +66,10 @@ class McpClient {
   }
 
   /**
-   * Send JSON-RPC 2.0 request over Streamable HTTP transport
+   * Send JSON-RPC 2.0 request over Streamable HTTP transport.
+   * Automatically manages Mcp-Session-Id and transparently heals expired sessions on server restart.
    */
-  async _sendRpc(method, params = {}, isNotification = false) {
+  async _sendRpc(method, params = {}, isNotification = false, isRetry = false) {
     const id = isNotification ? undefined : this.requestId++
     const payload = {
       jsonrpc: '2.0',
@@ -81,7 +82,8 @@ class McpClient {
       'Content-Type': 'application/json',
       'Accept': 'application/json, text/event-stream',
     }
-    if (this.sessionId) {
+    // Only send session ID for post-handshake RPC calls
+    if (this.sessionId && method !== 'initialize') {
       headers['mcp-session-id'] = this.sessionId
     }
 
@@ -102,7 +104,7 @@ class McpClient {
       })
     }
 
-    // Capture Mcp-Session-Id header
+    // Capture Mcp-Session-Id header from server response
     const sid = res.headers.get('mcp-session-id')
     if (sid) {
       this.sessionId = sid
@@ -114,20 +116,43 @@ class McpClient {
 
     if (!res.ok && res.status !== 200) {
       const errText = await res.text()
+      // Detect expired or missing MCP session from server restart (HTTP 404 Session not found)
+      const isSessionLost = res.status === 404 || errText.includes('Session not found')
+      if (isSessionLost && !isRetry && method !== 'initialize') {
+        this.sessionId = null
+        this.initialized = false
+        const reinit = await this.initialize()
+        if (reinit && reinit.success) {
+          // Transparently retry original RPC with fresh session
+          return await this._sendRpc(method, params, isNotification, true)
+        }
+      }
       throw new Error(`MCP HTTP ${res.status}: ${errText || res.statusText}`)
     }
 
     const data = await res.json()
     if (data.error) {
+      const errMsg = data.error.message || ''
+      if (errMsg.includes('Session not found') && !isRetry && method !== 'initialize') {
+        this.sessionId = null
+        this.initialized = false
+        const reinit = await this.initialize()
+        if (reinit && reinit.success) {
+          return await this._sendRpc(method, params, isNotification, true)
+        }
+      }
       throw new Error(data.error.message || `MCP RPC Error ${data.error.code}`)
     }
     return data.result
   }
 
   /**
-   * Perform protocol initialization and capability negotiation
+   * Perform protocol initialization and capability negotiation.
+   * Resets any stale session ID to ensure clean handshake.
    */
   async initialize() {
+    this.sessionId = null
+    this.initialized = false
     try {
       const result = await this._sendRpc('initialize', {
         protocolVersion: this.protocolVersion,
@@ -154,6 +179,7 @@ class McpClient {
         protocolVersion: this.protocolVersion,
       }
     } catch (err) {
+      this.sessionId = null
       this.initialized = false
       return {
         success: false,
@@ -166,7 +192,7 @@ class McpClient {
    * Discover registered tools
    */
   async listTools() {
-    if (!this.initialized) {
+    if (!this.initialized || !this.sessionId) {
       await this.initialize()
     }
     const result = await this._sendRpc('tools/list', {})
@@ -178,8 +204,11 @@ class McpClient {
    * Execute an MCP Tool by name with validated arguments
    */
   async callTool(name, argumentsObj = {}) {
-    if (!this.initialized) {
-      await this.initialize()
+    if (!this.initialized || !this.sessionId) {
+      const initRes = await this.initialize()
+      if (!initRes.success) {
+        throw new Error(`MCP session unavailable: ${initRes.error}`)
+      }
     }
 
     const result = await this._sendRpc('tools/call', {
