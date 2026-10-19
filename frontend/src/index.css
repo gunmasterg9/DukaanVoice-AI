@@ -3240,3 +3240,322 @@ input,
   justify-content: flex-end;
   gap: 10px;
 }
+
+/* ==========================================================================
+   Alexa+ Simulated Experience Styles (Phase 3)
+   Responsive for 320px, 375px, 768px, and desktop widths.
+   ========================================================================== */
+
+.alexa-plus-simulator {
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.alexa-plus-banner {
+  background: linear-gradient(135deg, rgba(108, 71, 255, 0.12) 0%, rgba(22, 33, 62, 0.9) 100%);
+  border: 1px solid rgba(108, 71, 255, 0.35);
+  border-radius: var(--radius-lg);
+  padding: var(--space-md) var(--space-lg);
+}
+
+.alexa-plus-banner-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+
+.alexa-plus-title-group {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.alexa-plus-title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.alexa-plus-subtitle {
+  margin: 4px 0 0;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+
+.alexa-plus-badges {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.alexa-plus-disclaimer {
+  margin-top: 10px;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: var(--radius-sm);
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+  border-left: 3px solid var(--color-warning);
+}
+
+.alexa-plus-scenarios-card {
+  padding: var(--space-md);
+  border-radius: var(--radius-lg);
+}
+
+.alexa-plus-scenarios-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: var(--space-sm);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.alexa-plus-scenarios-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.alexa-plus-scenario-btn {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  border-radius: var(--radius-md);
+  padding: 6px 12px;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: normal;
+  text-align: left;
+}
+
+.alexa-plus-scenario-btn:hover:not(:disabled) {
+  border-color: var(--color-primary);
+  background: rgba(108, 71, 255, 0.15);
+  transform: translateY(-1px);
+}
+
+.alexa-plus-scenario-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.alexa-plus-chat-card {
+  display: flex;
+  flex-direction: column;
+  height: 520px;
+  padding: 0;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+}
+
+.alexa-plus-chat-stream {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-md);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.alexa-plus-bubble {
+  max-width: 85%;
+  display: flex;
+  flex-direction: column;
+  animation: fadeIn 150ms ease-in-out;
+}
+
+.alexa-plus-bubble.user {
+  align-self: flex-end;
+  align-items: flex-end;
+}
+
+.alexa-plus-bubble.assistant {
+  align-self: flex-start;
+  align-items: flex-start;
+}
+
+.alexa-plus-bubble-meta {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+}
+
+.alexa-plus-bubble-content {
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  font-size: 0.92rem;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.alexa-plus-bubble.user .alexa-plus-bubble-content {
+  background: var(--color-primary);
+  color: #ffffff;
+  border-bottom-right-radius: 2px;
+}
+
+.alexa-plus-bubble.assistant .alexa-plus-bubble-content {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-bottom-left-radius: 2px;
+}
+
+.alexa-plus-bubble.assistant.error .alexa-plus-bubble-content {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #fca5a5;
+}
+
+.alexa-plus-bubble.assistant.success .alexa-plus-bubble-content {
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.4);
+  color: #6ee7b7;
+}
+
+/* Proposal Card */
+.alexa-plus-proposal-card {
+  border: 2px solid var(--color-primary);
+  background: rgba(108, 71, 255, 0.08);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  margin-top: 4px;
+}
+
+.alexa-plus-proposal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.alexa-plus-proposal-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.alexa-plus-proposal-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.alexa-plus-proposal-cell {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+}
+
+.alexa-plus-proposal-cell-label {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+
+.alexa-plus-proposal-cell-value {
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.alexa-plus-proposal-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.alexa-plus-input-bar {
+  padding: var(--space-md);
+  border-top: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.alexa-plus-input-field {
+  flex: 1;
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  font-size: 0.92rem;
+  outline: none;
+  font-family: inherit;
+  transition: border-color var(--transition-fast);
+}
+
+.alexa-plus-input-field:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(108, 71, 255, 0.2);
+}
+
+.alexa-plus-input-field:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+  .alexa-plus-chat-card {
+    height: 460px;
+  }
+  .alexa-plus-bubble {
+    max-width: 92%;
+  }
+  .alexa-plus-proposal-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .alexa-plus-banner {
+    padding: var(--space-sm) var(--space-md);
+  }
+  .alexa-plus-title {
+    font-size: 1.1rem;
+  }
+  .alexa-plus-chat-card {
+    height: 420px;
+  }
+  .alexa-plus-proposal-grid {
+    grid-template-columns: 1fr;
+  }
+  .alexa-plus-proposal-actions {
+    flex-direction: column;
+  }
+  .alexa-plus-input-bar {
+    padding: var(--space-sm);
+  }
+  .alexa-plus-scenario-btn {
+    font-size: 0.78rem;
+    padding: 6px 10px;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}

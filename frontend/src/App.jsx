@@ -9,18 +9,20 @@ import { Reports } from './components/Reports'
 import { Expenses } from './components/Expenses'
 import { CashClosing } from './components/CashClosing'
 import { CommandBar } from './components/CommandBar'
+import { AlexaPlusSimulator } from './components/AlexaPlusSimulator'
 import { LanguageSelector } from './i18n/LanguageSelector'
 import { useI18n } from './i18n/I18nContext'
 import './index.css'
 
 function App() {
   const { t } = useI18n()
-  const [activePage, setActivePage] = useState('quick_sale')
+  const [activePage, setActivePage] = useState('alexa_plus')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [data, setData] = useState(null)
 
   const pages = [
+    { id: 'alexa_plus', label: '🎙️ Alexa+ Retail' },
     { id: 'quick_sale', label: `⚡ ${t('nav.quick_sale')}` },
     { id: 'dashboard', label: t('nav.dashboard') },
     { id: 'products', label: t('nav.products') },
@@ -213,6 +215,7 @@ function App() {
           </div>
         )}
 
+        {activePage === 'alexa_plus' && <AlexaPlusSimulator />}
         {activePage === 'quick_sale' && <QuickSale />}
         {activePage === 'products' && <Products />}
         {activePage === 'transactions' && <Transactions />}

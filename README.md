@@ -53,6 +53,13 @@ It empowers retailers to manage sales, customer credit (*Udhaar Khata*), daily c
 - **Integer Milli-Unit Stock:** Inventory quantities are stored as integer milli-units (`1000 milli-units = 1 base unit`).
 - **Mathematical Continuity Reconciliation:** Built-in audit report verifying $\text{Opening} + \text{Purchased} - \text{Sold} \pm \text{Adjustments} = \text{Current Stock}$ for every single item.
 
+### 🎙️ 8. Amazon Alexa+ & Model Context Protocol (MCP) Integration (Hackathon 2026 Track)
+- **Official MCP SDK & Streamable HTTP:** Fully compliant Model Context Protocol server mounted at `/mcp` and `/api/mcp` using the official `mcp==2.3.0` Python SDK and protocol version `2025-11-25`.
+- **4 Deterministic Retail Tools:** Exposes `get_inventory`, `record_sale`, `record_purchase`, and `get_daily_report` directly to LLM agents and Alexa+.
+- **Two-Step Action Proposal Guardrail:** `record_sale` and `record_purchase` require an explicit proposal confirmation cycle (`confirm=False` -> draft proposal with 0 stock changes; `confirm=True` -> atomic SQLite commit).
+- **Indic & Multilingual Product Resolution:** Resolves Indic numerals (`૦-૯`, `०-९`) and vernacular Hindi/Gujarati product queries to exact catalog items.
+- **Interactive Web Simulator:** Built-in voice copilot tab with Web Speech recognition, TTS, Action Proposal Cards, and 1-click evaluation presets.
+
 ---
 
 ## 🏛️ Supported Indian Languages (8th Schedule)
@@ -87,13 +94,15 @@ It empowers retailers to manage sales, customer credit (*Udhaar Khata*), daily c
 
 ## 💻 Tech Stack & Architecture
 
-- **Frontend:** React 18, Vite 6, Vanilla CSS (dynamic dark/light design system with HSL tokens, glassmorphism, RTL engine).
-- **Backend:** FastAPI, Python 3.12, Pydantic v2, Uvicorn.
+- **Frontend:** React 19, Vite 8, Vanilla CSS (dynamic dark/light design system with HSL tokens, glassmorphism, RTL engine, Web Speech recognition & TTS).
+- **Backend:** FastAPI, Python 3.12, Pydantic v2, Uvicorn, Official Model Context Protocol SDK (`mcp==2.3.0`, Starlette ASGI mount).
+- **MCP Transport:** Streamable HTTP (JSON-RPC 2.0, spec version `2025-11-25`, `Mcp-Session-Id` header handling).
 - **Database:** SQLite 3 (WAL mode, parameterized SQL, Schema Version 4).
 - **Operating System:** Windows 10/11 local-first workstation.
 - **Default Local URLs:**
   - Frontend: `http://127.0.0.1:5173`
   - Backend API: `http://127.0.0.1:8000` (Interactive docs: `http://127.0.0.1:8000/docs`)
+  - Alexa+ MCP Streamable HTTP Endpoint: `http://127.0.0.1:8000/mcp` and `http://127.0.0.1:8000/api/mcp`
 - **Database Storage Path:** `backend/data/dukaanvoice.db`
 
 ---
@@ -158,25 +167,26 @@ Copy-Item .env.example .env
 DukaanVoice AI includes comprehensive test suites across backend, frontend, and static analysis:
 
 ```powershell
-# 1. Backend test suite (73 tests - 100% pass)
+# 1. Backend test suite (88 tests collected, 87 passed; 15/15 MCP tests pass)
+# Note: 1 pre-existing baseline failure in test_cash_closing_reconciliation_math due to hardcoded test date
 cd backend
 .\.venv\Scripts\pytest.exe -v
 
-# 2. Frontend i18n & translation parity tests (49 tests - 100% pass)
+# 2. Frontend test suite (72 unit, i18n, simulator, and MCP client tests - 100% pass)
 cd ..\frontend
 npm.cmd test
 
-# 3. Frontend static analysis & linting (0 warnings, 0 errors)
-npx.cmd oxlint
+# 3. Frontend static analysis & linting (0 warnings, 0 errors across 51 files)
+npm.cmd run lint
 
-# 4. Production build compilation
+# 4. Production build compilation (Vite 8 production build - built in ~400ms)
 npm.cmd run build
 
-# 5. Standalone Python E2E lifecycle audit (isolated temporary DB)
+# 5. Standalone Python E2E lifecycle audit (isolated temporary DB - 9/9 passed)
 cd ..
 .\backend\.venv\Scripts\python.exe scripts\e2e_verification.py
 
-# 6. Live Kirana API E2E test runner (isolated test DB, Node.js)
+# 6. Live Kirana API E2E test runner (isolated test DB, Node.js - 11/11 passed)
 node live_kirana_e2e_test.mjs
 ```
 
@@ -189,8 +199,12 @@ DukaanVoice AI/
 ├── backend/
 │   ├── app/
 │   │   ├── database.py         # SQLite connection & WAL configuration
-│   │   ├── main.py             # FastAPI app initialization & router registration
+│   │   ├── main.py             # FastAPI app initialization, MCP mount & lifespan
 │   │   ├── schema.py           # Additive Schema v1 -> v4 migration engine
+│   │   ├── mcp/                # Model Context Protocol (MCP 2025-11-25)
+│   │   │   ├── __init__.py     # Module exports
+│   │   │   ├── server.py       # Streamable HTTP MCP server factory
+│   │   │   └── tools.py        # 4 deterministic retail tools & safety lifecycle
 │   │   ├── routers/
 │   │   │   ├── cash_closing.py # Daily cash closing & reconciliation endpoints
 │   │   │   ├── customers.py    # Customer Udhaar Khata & statement endpoints
@@ -201,12 +215,16 @@ DukaanVoice AI/
 │   │   └── schemas/            # Pydantic v2 request/response models
 │   ├── data/                   # Local SQLite storage (dukaanvoice.db)
 │   ├── backups/                # Non-blocking SQLite online backup files
-│   └── tests/                  # 73 Pytest unit and integration tests
+│   └── tests/                  # 88 Pytest unit, integration, and MCP tests
+│       └── test_mcp.py         # 15 MCP Streamable HTTP protocol & tool tests
 ├── frontend/
 │   ├── src/
 │   │   ├── App.jsx             # Top-level navigation & tab layout
 │   │   ├── index.css           # Modern design system, HSL tokens, dark mode, RTL
+│   │   ├── alexaPlus.test.js   # 18 Alexa+ simulator workflow & safety tests
+│   │   ├── mcpClient.test.js   # 5 MCP client & Indic quantity parser tests
 │   │   ├── components/
+│   │   │   ├── AlexaPlusSimulator.jsx # Alexa+ Voice Copilot & Action Proposal Cards
 │   │   │   ├── CashClosing.jsx # Cash drawer reconciliation & locking UI
 │   │   │   ├── Expenses.jsx    # Expense entry, filtering, and reversal UI
 │   │   │   ├── QuickSale.jsx   # Fast POS billing, cart, and thermal receipts
@@ -214,13 +232,16 @@ DukaanVoice AI/
 │   │   │   ├── Products.jsx    # Catalog management with optional SKU
 │   │   │   └── Reports.jsx     # Sales analytics & inventory reconciliation
 │   │   ├── i18n/               # 23 Translation dictionaries & language selector
-│   │   └── services/           # Axios API client & command parser
+│   │   └── services/           # Axios API client, command parser & mcpClient
+│   │       └── mcpClient.js    # Streamable HTTP MCP JSON-RPC client
 │   ├── package.json
 │   └── vite.config.js
 ├── scripts/
 │   └── e2e_verification.py     # Standalone Python E2E lifecycle test on isolated database
 ├── live_kirana_e2e_test.mjs    # Strengthened Node.js Kirana E2E integration test
 ├── docs/
+│   ├── ALEXA_PLUS_MCP.md       # Comprehensive Alexa+ Model Context Protocol (MCP) spec
+│   ├── ALEXA_PLUS_DEMO_SCRIPT.md # Video demo script & teleprompter (<3 minutes)
 │   ├── SUBMISSION_DEMO_GUIDE.md # Official submission guide & evaluator demo protocol
 │   ├── FINAL_QA_REPORT.md      # Comprehensive QA audit, metrics, and sign-off
 │   ├── RELEASE_NOTES.md        # Feature highlights and release details
@@ -242,10 +263,13 @@ DukaanVoice AI/
 3. **Audit Trails & Compensating Reversals:** Transactions and expenses cannot be hard-deleted; reversals create explicit compensating records to preserve historical integrity.
 4. **Closing Lock:** Finalized daily cash closings are permanently locked against tampering.
 5. **Database Backups:** Safe online backups can be created at any time without locking active retail transactions (`docs/BACKUP_RESTORE.md`).
+6. **Two-Step Voice Transaction Safety:** MCP voice tools create review proposals first; actual inventory deductions require merchant confirmation.
 
 ---
 
 ## 📜 Documentation Links
+- [Alexa+ MCP Architecture & Specification](docs/ALEXA_PLUS_MCP.md)
+- [Alexa+ Video Demo Script (<3 Minutes)](docs/ALEXA_PLUS_DEMO_SCRIPT.md)
 - [Submission & Demo Guide](docs/SUBMISSION_DEMO_GUIDE.md)
 - [Final QA Report](docs/FINAL_QA_REPORT.md)
 - [Release Notes](docs/RELEASE_NOTES.md)

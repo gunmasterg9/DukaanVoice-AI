@@ -8,7 +8,7 @@
     "build": "vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "test": "node --test src/healthState.test.js src/utils/formatters.test.js src/reports.test.js src/i18n/i18n.test.js"
+    "test": "node --test src/healthState.test.js src/utils/formatters.test.js src/reports.test.js src/i18n/i18n.test.js src/mcpClient.test.js src/alexaPlus.test.js"
   },
   "dependencies": {
     "react": "^19.2.8",

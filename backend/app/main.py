@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app import __version__
 from app.config import get_settings
 from app.database import initialize_schema
+from app.mcp import create_mcp_server
 from app.routers import (
     cash_closing,
     customers,
@@ -19,14 +20,16 @@ from app.routers import (
 )
 
 
-@asynccontextmanager
-async def lifespan(_app: FastAPI):
-    initialize_schema()
-    yield
-
-
 def create_app() -> FastAPI:
     settings = get_settings()
+    server, mcp_app = create_mcp_server()
+
+    @asynccontextmanager
+    async def lifespan(_app: FastAPI):
+        initialize_schema()
+        async with server.session_manager.run():
+            yield
+
     application = FastAPI(
         title="DukaanVoice AI",
         version=__version__,
@@ -47,6 +50,11 @@ def create_app() -> FastAPI:
     application.include_router(customers.router)
     application.include_router(expenses.router)
     application.include_router(cash_closing.router)
+
+    # Mount Streamable HTTP MCP server (Model Context Protocol 2025-11-25)
+    application.mount("/mcp", mcp_app)
+    application.mount("/api/mcp", mcp_app)
+
     return application
 
 
